@@ -1,0 +1,6 @@
+//SoundManager.cpp
+
+
+class SoundManager {
+
+}

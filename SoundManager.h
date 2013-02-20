@@ -1,0 +1,6 @@
+//SoundManager.h
+
+
+class SoundManager{
+
+}
