@@ -3,10 +3,8 @@
 #ifndef _SOUNDMANAGER_H_
     #define _SOUNDMANAGER_H_
 
-#include <ResourceManager.h>
-#include <SDL.h>
-#include <SDL_mixer.h>
-#include <utilities.h>
+//#include <SDL.h>
+//#include <SDL_mix.h>
 #include <string>
 #include <vector>
 

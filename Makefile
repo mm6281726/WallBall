@@ -53,7 +53,8 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_WallBall_OBJECTS = WallBall-WallBall.$(OBJEXT)
+am_WallBall_OBJECTS = WallBall-WallBall.$(OBJEXT) \
+	WallBall-SoundManager.$(OBJEXT)
 WallBall_OBJECTS = $(am_WallBall_OBJECTS)
 am__DEPENDENCIES_1 =
 WallBall_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -223,11 +224,11 @@ target_alias =
 top_build_prefix = 
 top_builddir = .
 top_srcdir = .
-noinst_HEADERS = WallBall.h
+noinst_HEADERS = WallBall.h SoundManager.h
 WallBall_CPPFLAGS = -I$(top_srcdir)
-WallBall_SOURCES = WallBall.cpp
-WallBall_CXXFLAGS = $(OGRE_CFLAGS) $(OIS_CFLAGS) $(bullet_CFLAGS)
-WallBall_LDADD = $(OGRE_LIBS) $(OIS_LIBS) $(bullet_LIBS)
+WallBall_SOURCES = WallBall.cpp SoundManager.cpp
+WallBall_CXXFLAGS = $(OGRE_CFLAGS) $(OIS_CFLAGS) $(bullet_CFLAGS) $(SDL_CFLAGS)
+WallBall_LDADD = $(OGRE_LIBS) $(OIS_LIBS) $(bullet_LIBS) $(SDL_LIBS)
 EXTRA_DIST = buildit makeit
 AUTOMAKE_OPTIONS = foreign
 all: config.h
@@ -337,6 +338,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+include ./$(DEPDIR)/WallBall-SoundManager.Po
 include ./$(DEPDIR)/WallBall-WallBall.Po
 
 .cpp.o:
@@ -373,6 +375,20 @@ WallBall-WallBall.obj: WallBall.cpp
 #	source='WallBall.cpp' object='WallBall-WallBall.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -c -o WallBall-WallBall.obj `if test -f 'WallBall.cpp'; then $(CYGPATH_W) 'WallBall.cpp'; else $(CYGPATH_W) '$(srcdir)/WallBall.cpp'; fi`
+
+WallBall-SoundManager.o: SoundManager.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -MT WallBall-SoundManager.o -MD -MP -MF $(DEPDIR)/WallBall-SoundManager.Tpo -c -o WallBall-SoundManager.o `test -f 'SoundManager.cpp' || echo '$(srcdir)/'`SoundManager.cpp
+	$(am__mv) $(DEPDIR)/WallBall-SoundManager.Tpo $(DEPDIR)/WallBall-SoundManager.Po
+#	source='SoundManager.cpp' object='WallBall-SoundManager.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -c -o WallBall-SoundManager.o `test -f 'SoundManager.cpp' || echo '$(srcdir)/'`SoundManager.cpp
+
+WallBall-SoundManager.obj: SoundManager.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -MT WallBall-SoundManager.obj -MD -MP -MF $(DEPDIR)/WallBall-SoundManager.Tpo -c -o WallBall-SoundManager.obj `if test -f 'SoundManager.cpp'; then $(CYGPATH_W) 'SoundManager.cpp'; else $(CYGPATH_W) '$(srcdir)/SoundManager.cpp'; fi`
+	$(am__mv) $(DEPDIR)/WallBall-SoundManager.Tpo $(DEPDIR)/WallBall-SoundManager.Po
+#	source='SoundManager.cpp' object='WallBall-SoundManager.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -c -o WallBall-SoundManager.obj `if test -f 'SoundManager.cpp'; then $(CYGPATH_W) 'SoundManager.cpp'; else $(CYGPATH_W) '$(srcdir)/SoundManager.cpp'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

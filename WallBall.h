@@ -23,6 +23,7 @@ This source file is part of the
 #include <OISKeyboard.h>
 #include <OISMouse.h>
 #include <OgreWindowEventUtilities.h>
+#include <SoundManager.h>
  
 class WallBall : public Ogre::WindowEventListener, public Ogre::FrameListener
 {
@@ -51,6 +52,10 @@ private:
     OIS::InputManager* mInputManager;
     OIS::Mouse*    mMouse;
     OIS::Keyboard* mKeyboard;
+
+    //Sounds
+    int soundA;
+    int soundB;
 };
  
 #endif // #ifndef __WallBall_h_

@@ -41,6 +41,8 @@ WallBall::~WallBall(void)
     //Remove ourself as a Window listener
     Ogre::WindowEventUtilities::removeWindowEventListener(mWindow, this);
     windowClosed(mWindow);
+    SoundManager::SoundControl.cleanup();
+    Mix_CloseAudio();
     delete mRoot;
 }
  
@@ -139,6 +141,17 @@ bool WallBall::go(void)
  
     mKeyboard = static_cast<OIS::Keyboard*>(mInputManager->createInputObject( OIS::OISKeyboard, false ));
     mMouse = static_cast<OIS::Mouse*>(mInputManager->createInputObject( OIS::OISMouse, false ));
+
+/*********************************************************************************************************************************************************************************************/
+    //Load Sound clips
+    if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096) < 0)
+        return false;
+    if((soundA = SoundManager::SoundControl.OnLoad("Drums - Tribal - Various Takes.aif")) == -1) 
+        return false;
+ 
+    if((soundB = SoundManager::SoundControl.OnLoad("pe10_15_kick_body_hit_3.aif")) == -1)
+        return false;
+/*********************************************************************************************************************************************************************************************/
  
     //Set initial mouse clipping size
     windowResized(mWindow);
