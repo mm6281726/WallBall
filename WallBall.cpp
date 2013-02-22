@@ -1,6 +1,6 @@
 /*
 -----------------------------------------------------------------------------
-Filename:    MinimalOgre.cpp
+Filename:    WallBall.cpp
 -----------------------------------------------------------------------------
  
 This source file is part of the
@@ -14,13 +14,13 @@ This source file is part of the
       http://www.ogre3d.org/tikiwiki/
 -----------------------------------------------------------------------------
 */
-#include "MinimalOgre.h"
+#include "WallBall.h"
 #include <time.h>
 
 Ogre::Vector3 velocity(0,0,0);
  
 //-------------------------------------------------------------------------------------
-MinimalOgre::MinimalOgre(void)
+WallBall::WallBall(void)
     : mRoot(0),
     mCamera(0),
     mSceneMgr(0),
@@ -38,7 +38,7 @@ MinimalOgre::MinimalOgre(void)
 {
 }
 //-------------------------------------------------------------------------------------
-MinimalOgre::~MinimalOgre(void)
+WallBall::~WallBall(void)
 {
     if (mTrayMgr) delete mTrayMgr;
     if (mCameraMan) delete mCameraMan;
@@ -49,7 +49,7 @@ MinimalOgre::~MinimalOgre(void)
     delete mRoot;
 }
  
-bool MinimalOgre::go(void)
+bool WallBall::go(void)
 {
 #ifdef _DEBUG
     mResourcesCfg = "resources_d.cfg";
@@ -94,7 +94,7 @@ bool MinimalOgre::go(void)
     {
         // If returned true, user clicked OK so initialise
         // Here we choose to let the system create a default rendering window by passing 'true'
-        mWindow = mRoot->initialise(true, "MinimalOgre Render Window");
+        mWindow = mRoot->initialise(true, "WallBall Render Window");
     }
     else
     {
@@ -110,9 +110,9 @@ bool MinimalOgre::go(void)
     mCamera = mSceneMgr->createCamera("PlayerCam");
  
     // Position it at 500 in Z direction
-    mCamera->setPosition(Ogre::Vector3(0,10,100));
+    mCamera->setPosition(Ogre::Vector3(0,50,600));
     // Look back along -Z
-    mCamera->lookAt(Ogre::Vector3(0,0,0));
+    mCamera->lookAt(Ogre::Vector3(0,-10,0));
     mCamera->setNearClipDistance(5);
  
     mCameraMan = new OgreBites::SdkCameraMan(mCamera);   // create a default camera controller
@@ -141,11 +141,18 @@ bool MinimalOgre::go(void)
     Ogre::SceneNode* ballNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("BallNode");
     ballNode->attachObject(ball);
     ballNode->scale(.1,.1,.1);
+
+    Ogre::Entity* paddle = mSceneMgr->createEntity("Paddle", "ninja.mesh");
+    Ogre::SceneNode* paddleNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("PaddleNode");
+    paddleNode->attachObject(paddle);
+    paddleNode->scale(.50,.50,.50);
+    paddleNode->roll(Ogre::Degree(90));
+    paddleNode->setPosition(0, -50, 300);
     
     srand ( time(NULL) );
     velocity.x = rand() % 10*20;
     velocity.y = rand() % 10*20;
-    velocity.z = rand() % 10*20;
+    velocity.z = -200;
 
     Ogre::Plane roofFront(Ogre::Vector3::NEGATIVE_UNIT_Y, -100);
     Ogre::Plane roofBack(Ogre::Vector3::UNIT_Y, 100);
@@ -155,8 +162,8 @@ bool MinimalOgre::go(void)
     Ogre::Plane rightWallBack(Ogre::Vector3::UNIT_X, 100);
     Ogre::Plane leftWallFront(Ogre::Vector3::UNIT_X, -100);
     Ogre::Plane leftWallBack(Ogre::Vector3::NEGATIVE_UNIT_X, 100);
-    Ogre::Plane backWallFront(Ogre::Vector3::NEGATIVE_UNIT_Z, -300);
-    Ogre::Plane backWallBack(Ogre::Vector3::UNIT_Z, 300);
+    //Ogre::Plane backWallFront(Ogre::Vector3::NEGATIVE_UNIT_Z, -300);
+    //Ogre::Plane backWallBack(Ogre::Vector3::UNIT_Z, 300);
     Ogre::Plane frontWallFront(Ogre::Vector3::UNIT_Z, -300);
     Ogre::Plane frontWallBack(Ogre::Vector3::NEGATIVE_UNIT_Z, 300);
     
@@ -176,15 +183,15 @@ bool MinimalOgre::go(void)
     leftWallFront, 600, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Y);
     Ogre::MeshManager::getSingleton().createPlane("leftWallBack", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
     leftWallBack, 600, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Y);
-    Ogre::MeshManager::getSingleton().createPlane("backWallFront", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+    /*Ogre::MeshManager::getSingleton().createPlane("backWallFront", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
     backWallFront, 200, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_X);
     Ogre::MeshManager::getSingleton().createPlane("backWallBack", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-    backWallBack, 200, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_X);
+    backWallBack, 200, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_X);*/
     Ogre::MeshManager::getSingleton().createPlane("frontWallFront", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
     frontWallFront, 200, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_X);
     Ogre::MeshManager::getSingleton().createPlane("frontWallBack", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
     frontWallBack, 200, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_X); 
-
+    
     Ogre::Entity* entRoofFront = mSceneMgr->createEntity("RoofFrontEntity", "roofFront");
     mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(entRoofFront);
     entRoofFront->setMaterialName("Examples/Rockwall");
@@ -224,7 +231,7 @@ bool MinimalOgre::go(void)
     mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(entLeftWallBack);
     entLeftWallBack->setMaterialName("Examples/Rockwall");
     entLeftWallBack->setCastShadows(false);
-
+/*
     Ogre::Entity* entBackWallFront = mSceneMgr->createEntity("BackWallFront", "backWallFront");
     mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(entBackWallFront);
     entBackWallFront->setMaterialName("Examples/Rockwall");
@@ -234,7 +241,7 @@ bool MinimalOgre::go(void)
     mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(entBackWallBack);
     entBackWallBack->setMaterialName("Examples/Rockwall");
     entBackWallBack->setCastShadows(false);
-
+*/
     Ogre::Entity* entFrontWallFront = mSceneMgr->createEntity("FrontWallFront", "frontWallFront");
     mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(entFrontWallFront);
     entFrontWallFront->setMaterialName("Examples/Rockwall");
@@ -354,7 +361,7 @@ bool MinimalOgre::go(void)
     return true;
 }
  
-bool MinimalOgre::frameRenderingQueued(const Ogre::FrameEvent& evt)
+bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
 {
     if(mWindow->isClosed())
         return false;
@@ -382,8 +389,11 @@ bool MinimalOgre::frameRenderingQueued(const Ogre::FrameEvent& evt)
             mDetailsPanel->setParamValue(7, Ogre::StringConverter::toString(mCamera->getDerivedOrientation().z));
         }
     }
+    Ogre::SceneNode* paddle = mSceneMgr->getSceneNode("PaddleNode");
+    Ogre::Vector3 paddlePosition = paddle->getPosition();
+
     Ogre::SceneNode* ball = mSceneMgr->getSceneNode("BallNode");
-    Ogre::Vector3 ballPosition = mSceneMgr->getSceneNode("BallNode")->getPosition();
+    Ogre::Vector3 ballPosition = ball->getPosition();
     if(ballPosition.x>90) {
         ballPosition.x = 90;
         velocity.x *= -1;
@@ -398,11 +408,13 @@ bool MinimalOgre::frameRenderingQueued(const Ogre::FrameEvent& evt)
         ballPosition.y = -90;
         velocity.y *= -1;
     }
-    if(ballPosition.z>90) {
-        ballPosition.z = 90;
-        velocity.z *= -1;
-    } else if(ballPosition.z<-90) {
-        ballPosition.z = -90;
+    if(ballPosition.z>290 && ballPosition.z<300) {
+        if( (ballPosition.x <= paddlePosition.x && ballPosition.x >= (paddlePosition.x - 100)) && (ballPosition.y >= (paddlePosition.y - 20) && ballPosition.y <= (paddlePosition.y + 20)) ){
+            ballPosition.z = 290;
+            velocity.z *= -1;
+        }
+    } else if(ballPosition.z<-290) {
+        ballPosition.z = -290;
         velocity.z *= -1;
     }
 
@@ -416,7 +428,7 @@ bool MinimalOgre::frameRenderingQueued(const Ogre::FrameEvent& evt)
     return true;
 }
 //-------------------------------------------------------------------------------------
-bool MinimalOgre::keyPressed( const OIS::KeyEvent &arg )
+bool WallBall::keyPressed( const OIS::KeyEvent &arg )
 {
     if (mTrayMgr->isDialogVisible()) return true;   // don't process any more keys if dialog is up
  
@@ -505,32 +517,52 @@ bool MinimalOgre::keyPressed( const OIS::KeyEvent &arg )
     {
         mShutDown = true;
     }
+
+    else if (arg.key == OIS::KC_RETURN)
+    {
+        mSceneMgr->getSceneNode("BallNode")->setPosition(0,0,0);
+        velocity.z *= -1;
+    }
  
     mCameraMan->injectKeyDown(arg);
     return true;
 }
  
-bool MinimalOgre::keyReleased( const OIS::KeyEvent &arg )
+bool WallBall::keyReleased( const OIS::KeyEvent &arg )
 {
     mCameraMan->injectKeyUp(arg);
     return true;
 }
  
-bool MinimalOgre::mouseMoved( const OIS::MouseEvent &arg )
+bool WallBall::mouseMoved( const OIS::MouseEvent &arg )
 {
-    if (mTrayMgr->injectMouseMove(arg)) return true;
-    mCameraMan->injectMouseMove(arg);
+    //if (mTrayMgr->injectMouseMove(arg)) return true;
+    //mCameraMan->injectMouseMove(arg);
+
+    Ogre::SceneNode* p = mSceneMgr->getSceneNode("PaddleNode");
+    p->translate(arg.state.X.rel, -(arg.state.Y.rel), 0);
+    Ogre::Vector3 position = p->getPosition();
+    if(position.x > 100)
+        position.x = 100;
+    else if(position.x < -10)
+        position.x = -10;
+    if(position.y > 90)
+        position.y = 90;
+    else if(position.y < -100)
+        position.y = -100;
+
+    p->setPosition(position);
     return true;
 }
  
-bool MinimalOgre::mousePressed( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
+bool WallBall::mousePressed( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
 {
     if (mTrayMgr->injectMouseDown(arg, id)) return true;
     mCameraMan->injectMouseDown(arg, id);
     return true;
 }
  
-bool MinimalOgre::mouseReleased( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
+bool WallBall::mouseReleased( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
 {
     if (mTrayMgr->injectMouseUp(arg, id)) return true;
     mCameraMan->injectMouseUp(arg, id);
@@ -538,7 +570,7 @@ bool MinimalOgre::mouseReleased( const OIS::MouseEvent &arg, OIS::MouseButtonID 
 }
  
 //Adjust mouse clipping area
-void MinimalOgre::windowResized(Ogre::RenderWindow* rw)
+void WallBall::windowResized(Ogre::RenderWindow* rw)
 {
     unsigned int width, height, depth;
     int left, top;
@@ -550,7 +582,7 @@ void MinimalOgre::windowResized(Ogre::RenderWindow* rw)
 }
  
 //Unattach OIS before window shutdown (very important under Linux)
-void MinimalOgre::windowClosed(Ogre::RenderWindow* rw)
+void WallBall::windowClosed(Ogre::RenderWindow* rw)
 {
     //Only close for window that created OIS (the main window in these demos)
     if( rw == mWindow )
@@ -584,7 +616,7 @@ extern "C" {
 #endif
     {
         // Create application object
-        MinimalOgre app;
+        WallBall app;
  
         try {
             app.go();

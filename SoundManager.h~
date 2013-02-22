@@ -1,0 +1,24 @@
+//SoundManager.h
+
+#ifndef _SOUNDMANAGER_H_
+    #define _SOUNDMANAGER_H_
+
+//#include <SDL.h>
+//#include <SDL_mix.h>
+#include <string>
+#include <vector>
+
+class SoundManager{
+	private:
+		std::vector<Mix_Chunk*> SoundList;
+	public:
+		static SoundManager SoundControl;
+		int loadWAV(char nym[32]);
+
+		void playAudio();
+		void pauseAudio();
+		void playClip(int clipID, bool loop);
+		void mixAudio(void *unused, Uint8 *stream, Uint32 len);
+		void cleanup();
+}
+#endif

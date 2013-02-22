@@ -1,6 +1,6 @@
 /*
 -----------------------------------------------------------------------------
-Filename:    MinimalOgre.h
+Filename:    WallBall.h
 -----------------------------------------------------------------------------
  
 This source file is part of the
@@ -14,8 +14,8 @@ This source file is part of the
       http://www.ogre3d.org/tikiwiki/
 -----------------------------------------------------------------------------
 */
-#ifndef __MinimalOgre_h_
-#define __MinimalOgre_h_
+#ifndef __WallBall_h_
+#define __WallBall_h_
  
 #include <OgreCamera.h>
 #include <OgreEntity.h>
@@ -33,12 +33,15 @@ This source file is part of the
  
 #include <SdkTrays.h>
 #include <SdkCameraMan.h>
+
+#include "Simulator.h"
+#include "SoundManager.h"
  
-class MinimalOgre : public Ogre::FrameListener, public Ogre::WindowEventListener, public OIS::KeyListener, public OIS::MouseListener, OgreBites::SdkTrayListener
+class WallBall : public Ogre::FrameListener, public Ogre::WindowEventListener, public OIS::KeyListener, public OIS::MouseListener, OgreBites::SdkTrayListener
 {
 public:
-    MinimalOgre(void);
-    virtual ~MinimalOgre(void);
+    WallBall(void);
+    virtual ~WallBall(void);
     bool go(void);
 protected:
     Ogre::Root *mRoot;
@@ -76,4 +79,4 @@ protected:
     virtual void windowClosed(Ogre::RenderWindow* rw);
 };
  
-#endif // #ifndef __MinimalOgre_h_
+#endif // #ifndef __WallBall_h_
