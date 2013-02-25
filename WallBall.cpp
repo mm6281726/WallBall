@@ -540,7 +540,7 @@ bool WallBall::mouseMoved( const OIS::MouseEvent &arg )
     //mCameraMan->injectMouseMove(arg);
 
     Ogre::SceneNode* p = mSceneMgr->getSceneNode("PaddleNode");
-    p->translate(arg.state.X.rel, -(arg.state.Y.rel), 0);
+    p->translate(arg.state.X.rel/2, -(arg.state.Y.rel)/2, 0);
     Ogre::Vector3 position = p->getPosition();
     if(position.x > 100)
         position.x = 100;
@@ -552,6 +552,7 @@ bool WallBall::mouseMoved( const OIS::MouseEvent &arg )
         position.y = -100;
 
     p->setPosition(position);
+    mSceneMgr->getCamera("PlayerCam")->lookAt(position/2);
     return true;
 }
  

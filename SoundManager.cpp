@@ -1,28 +1,23 @@
 //SoundManager.cpp
 #include "SoundManager.h"
-/*
-#define NUM_SOUNDS 2
-struct sample {
-    Uint8 *data;
-    Uint32 dpos;
-    Uint32 dlen;
-} SoundList[NUM_SOUNDS];
 
-SoundManager SoundManager::SoundControl;
+#define NUM_SOUNDS 2
 
 SoundManager::SoundManager(){
 	//Load SDL Library
 	if(SDL_Init(SDL_INIT_AUDIO) < 0)
-		std::string msg = std::string("Could'nt initialize SDL: ") + SDL_get_error();
+		std::string msg = std::string("Could'nt initialize SDL");
 
-	SDL_AudioSpec fmt;
+	  SDL_AudioSpec fmt;
    	// Set 16-bit stereo audio at 44.1Khz
    	fmt.freq = 44100;
    	fmt.format = AUDIO_S16;
    	fmt.channels = 2;
    	fmt.samples = 512;        // A good value for games
-   	fmt.callback = mixaudio;
+   	fmt.callback = mixAudio;
    	fmt.userdata = NULL;
+
+    size = 0;
 
 	// Open the audio device and start playing sound!
    	if ( SDL_OpenAudio(&fmt, NULL) < 0 ) {
@@ -34,14 +29,15 @@ SoundManager::SoundManager(){
 }
 
 int SoundManager::loadWAV(char nym[32]){
-	SoundChunk* TempSound = NULL;
+	Sound_Chunk* TempSound = NULL;
 
-   	if((TempSound = SDL_LoadWAV(std::string("/sound") + nym)) == NULL)
-       	return -1;
+  if((TempSound = SDL_LoadWAV(std::string("/sound") + nym)) == NULL)
+      return -1;
  
-   	SoundList.push_back(TempSound);
+  SoundList[size] = TempSound;
+  size++;
 
-   	return (SoundList.size() - 1);
+  return (size - 1);
 }
 
 void SoundManager::playAudio(){
@@ -55,7 +51,7 @@ void SoundManager::pauseAudio(){
 void SoundManager::playClip(int clipID, bool loop){
 	//start the clip
 	if(clipID >= 0 && clipID < MAX_CLIPS)
-		Mix_PlayChannel(-1, SoundList[clipID], loop);
+		SDL_PlayChannel(-1, SoundList[clipID], loop);
 	else
 		return;
 }
@@ -65,23 +61,16 @@ void SoundManager::mixAudio(void *unused, Uint8 *stream, Uint32 len){
    	Uint32 amount;
 
    	for ( i=0; i<NUM_SOUNDS; ++i ) {
-       	amount = (sounds[i].dlen-sounds[i].dpos);
+       	amount = (SoundList[i].dlen-SoundList[i].dpos);
        	if ( amount > len ) {
            	amount = len;
        	}
-       	SDL_MixAudio(stream, &sounds[i].data[sounds[i].dpos], amount, SDL_MIX_MAXVOLUME);
-       	sounds[i].dpos += amount;
+       	SDL_MixAudio(stream, &SoundList[i].data[SoundList[i].dpos], amount, SDL_MIX_MAXVOLUME);
+       	SoundList[i].dpos += amount;
    	}
 }
 
 void SoundManager::cleanup() {
 	for(int i = 0;i < SoundList.size();i++)
-       	Mix_FreeChunk(SoundList[i]);
- 
-   	SoundList.clear();
+       	SDL_FreeChunk(SoundList[i]);
 }
-
-static SoundManager* SoundManager::getInstance(){
-	return SoundManager::SoundControl;
-}
-*/

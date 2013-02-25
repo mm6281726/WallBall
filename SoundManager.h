@@ -3,7 +3,7 @@
 #ifndef _SOUNDMANAGER_H_
     #define _SOUNDMANAGER_H_
 
-/*
+
 #include "SDL/SDL.h"
 #include "SDL/SDL_audio.h"
 //#include "SDL/SDL_mixer.h"
@@ -12,6 +12,7 @@
 
 #define NUM_SOUNDS 2
 struct sample {
+	SDL_AudioSpec wave;
     Uint8 *data;
     Uint32 dpos;
     Uint32 dlen;
@@ -20,7 +21,7 @@ struct sample {
 class SoundManager{
 	private:
 		SoundManager(void);
-		static SoundManager SoundControl;
+		int size;
 		//std::vector<Sound_Chunk*> SoundList;
 	public:
 		int loadWAV(char nym[32]);
@@ -31,5 +32,5 @@ class SoundManager{
 		void cleanup();
 		static SoundManager getInstance();
 };
-*/
+
 #endif

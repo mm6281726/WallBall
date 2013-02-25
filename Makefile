@@ -54,11 +54,11 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_WallBall_OBJECTS = WallBall-WallBall.$(OBJEXT) \
-	WallBall-SoundManager.$(OBJEXT)
+	WallBall-SoundManager.$(OBJEXT) WallBall-Simulator.$(OBJEXT)
 WallBall_OBJECTS = $(am_WallBall_OBJECTS)
 am__DEPENDENCIES_1 =
 WallBall_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 WallBall_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(WallBall_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
@@ -164,6 +164,8 @@ PKG_CONFIG = /usr/bin/pkg-config
 PKG_CONFIG_LIBDIR = 
 PKG_CONFIG_PATH = 
 RANLIB = ranlib
+SDL_CFLAGS = 
+SDL_LIBS = 
 SED = /bin/sed
 SET_MAKE = 
 SHELL = /bin/bash
@@ -224,9 +226,9 @@ target_alias =
 top_build_prefix = 
 top_builddir = .
 top_srcdir = .
-noinst_HEADERS = WallBall.h SoundManager.h
+noinst_HEADERS = WallBall.h SoundManager.h Simulator.h
 WallBall_CPPFLAGS = -I$(top_srcdir)
-WallBall_SOURCES = WallBall.cpp SoundManager.cpp
+WallBall_SOURCES = WallBall.cpp SoundManager.cpp Simulator.cpp
 WallBall_CXXFLAGS = $(OGRE_CFLAGS) $(OIS_CFLAGS) $(bullet_CFLAGS) $(SDL_CFLAGS)
 WallBall_LDADD = $(OGRE_LIBS) $(OIS_LIBS) $(bullet_LIBS) $(SDL_LIBS)
 EXTRA_DIST = buildit makeit
@@ -338,6 +340,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+include ./$(DEPDIR)/WallBall-Simulator.Po
 include ./$(DEPDIR)/WallBall-SoundManager.Po
 include ./$(DEPDIR)/WallBall-WallBall.Po
 
@@ -389,6 +392,20 @@ WallBall-SoundManager.obj: SoundManager.cpp
 #	source='SoundManager.cpp' object='WallBall-SoundManager.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -c -o WallBall-SoundManager.obj `if test -f 'SoundManager.cpp'; then $(CYGPATH_W) 'SoundManager.cpp'; else $(CYGPATH_W) '$(srcdir)/SoundManager.cpp'; fi`
+
+WallBall-Simulator.o: Simulator.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -MT WallBall-Simulator.o -MD -MP -MF $(DEPDIR)/WallBall-Simulator.Tpo -c -o WallBall-Simulator.o `test -f 'Simulator.cpp' || echo '$(srcdir)/'`Simulator.cpp
+	$(am__mv) $(DEPDIR)/WallBall-Simulator.Tpo $(DEPDIR)/WallBall-Simulator.Po
+#	source='Simulator.cpp' object='WallBall-Simulator.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -c -o WallBall-Simulator.o `test -f 'Simulator.cpp' || echo '$(srcdir)/'`Simulator.cpp
+
+WallBall-Simulator.obj: Simulator.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -MT WallBall-Simulator.obj -MD -MP -MF $(DEPDIR)/WallBall-Simulator.Tpo -c -o WallBall-Simulator.obj `if test -f 'Simulator.cpp'; then $(CYGPATH_W) 'Simulator.cpp'; else $(CYGPATH_W) '$(srcdir)/Simulator.cpp'; fi`
+	$(am__mv) $(DEPDIR)/WallBall-Simulator.Tpo $(DEPDIR)/WallBall-Simulator.Po
+#	source='Simulator.cpp' object='WallBall-Simulator.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -c -o WallBall-Simulator.obj `if test -f 'Simulator.cpp'; then $(CYGPATH_W) 'Simulator.cpp'; else $(CYGPATH_W) '$(srcdir)/Simulator.cpp'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
