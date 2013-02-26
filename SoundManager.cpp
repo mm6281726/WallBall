@@ -1,6 +1,6 @@
 //SoundManager.cpp
 #include "SoundManager.h"
-
+/*
 #define NUM_SOUNDS 2
 
 SoundManager::SoundManager(){
@@ -74,3 +74,4 @@ void SoundManager::cleanup() {
 	for(int i = 0;i < SoundList.size();i++)
        	SDL_FreeChunk(SoundList[i]);
 }
+*/
