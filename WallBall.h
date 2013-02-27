@@ -62,6 +62,10 @@ protected:
     OIS::InputManager* mInputManager;
     OIS::Mouse*    mMouse;
     OIS::Keyboard* mKeyboard;
+
+    // Sounds
+    int ballBounceWall;
+    int ballBouncePaddle;
  
     // Ogre::FrameListener
     virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);

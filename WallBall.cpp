@@ -36,12 +36,18 @@ WallBall::WallBall(void)
     mMouse(0),
     mKeyboard(0)
 {
+    if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096) < 0)
+        return false;
 }
 //-------------------------------------------------------------------------------------
 WallBall::~WallBall(void)
 {
     if (mTrayMgr) delete mTrayMgr;
     if (mCameraMan) delete mCameraMan;
+   
+    SoundManager::SoundControl.cleanup();
+ 
+    Mix_CloseAudio();
  
     //Remove ourself as a Window listener
     Ogre::WindowEventUtilities::removeWindowEventListener(mWindow, this);
@@ -304,6 +310,16 @@ bool WallBall::go(void)
     ballNode->attachObject(spotLight4);
     ballNode->attachObject(spotLight5);
     ballNode->attachObject(spotLight6);
+
+//-------------------------------------------------------------------------------------
+    //load Sounds
+    if((ballBounceWall = SoundManager::SoundControl.loadWAV("punch_body_hit2.wav")) == -1) {
+        return false;
+    }
+ 
+    if((ballBouncePaddle = SoundManager::SoundControl.loadWAV("slap1.wav")) == -1) {
+        return false;
+    }
     
 //-------------------------------------------------------------------------------------
     //create FrameListener
@@ -397,25 +413,31 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
     if(ballPosition.x>90) {
         ballPosition.x = 90;
         velocity.x *= -1;
+        SoundManager::SoundControl.playClip(ballBounceWall, 0);
     } else if(ballPosition.x<-90) {
         ballPosition.x = -90;
         velocity.x *= -1;
+        SoundManager::SoundControl.playClip(ballBounceWall, 0);
     }
     if(ballPosition.y>90) {
         ballPosition.y=90;
         velocity.y *= -1;
+        SoundManager::SoundControl.playClip(ballBounceWall, 0);
     } else if(ballPosition.y<-90) {
         ballPosition.y = -90;
         velocity.y *= -1;
+        SoundManager::SoundControl.playClip(ballBounceWall, 0);
     }
     if(ballPosition.z>290 && ballPosition.z<300) {
         if( (ballPosition.x <= paddlePosition.x && ballPosition.x >= (paddlePosition.x - 100)) && (ballPosition.y >= (paddlePosition.y - 20) && ballPosition.y <= (paddlePosition.y + 20)) ){
             ballPosition.z = 290;
             velocity.z *= -1;
+            SoundManager::SoundControl.playClip(ballBouncePaddle, 0);
         }
     } else if(ballPosition.z<-290) {
         ballPosition.z = -290;
         velocity.z *= -1;
+        SoundManager::SoundControl.playClip(ballBounceWall, 0);
     }
 
     ball->setPosition(ballPosition);

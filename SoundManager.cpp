@@ -1,43 +1,20 @@
 //SoundManager.cpp
 #include "SoundManager.h"
 
-#define NUM_SOUNDS 2
+SoundManager SoundManager::SoundControl;
 
-SoundManager::SoundManager(){
-	//Load SDL Library
-	if(SDL_Init(SDL_INIT_AUDIO) < 0)
-		std::string msg = std::string("Could'nt initialize SDL");
+SoundManager::SoundManager(){}
 
-	SDL_AudioSpec fmt;
-  // Set 16-bit stereo audio at 44.1Khz
-  fmt.freq = 44100;
-  fmt.format = AUDIO_S16;
-  fmt.channels = 2;
-  fmt.samples = 512;        // A good value for games
-  fmt.callback = mixAudio;
-  fmt.userdata = NULL;
-
-  size = 0;
-
-	// Open the audio device and start playing sound!
-  if ( SDL_OpenAudio(&fmt, NULL) < 0 ) {
-    fprintf(stderr, "Unable to open audio: %s\n", SDL_GetError());
-    exit(1);
-  }
-
-
-}
-
-int SoundManager::loadWAV(char nym[32]){
-	Sound_Chunk* TempSound = NULL;
-
-  if((TempSound = SDL_LoadWAV(std::string("/sound") + nym)) == NULL)
-      return -1;
+int SoundManager::loadWAV(char* file){
+	Mix_Chunk* TempSound = NULL;
  
-  SoundList[size] = TempSound;
-  size++;
-
-  return (size - 1);
+  if((TempSound = Mix_LoadWAV("sound/" + file)) == NULL) {
+      return -1;
+  }
+ 
+  SoundList.push_back(TempSound);
+ 
+  return (SoundList.size() - 1);
 }
 
 void SoundManager::playAudio(){
@@ -48,12 +25,11 @@ void SoundManager::pauseAudio(){
 	SDL_PauseAudio(true);
 }
 
-void SoundManager::playClip(int clipID, bool loop){
-	//start the clip
-	if(clipID >= 0 && clipID < MAX_CLIPS)
-		SDL_PlayChannel(-1, SoundList[clipID], loop);
-	else
-		return;
+void SoundManager::playClip(int clipID, int loop){
+	if(clipID < 0 || clipID >= SoundList.size()) return;
+    if(SoundList[clipID] == NULL) return;
+ 
+    Mix_PlayChannel(-1, SoundList[ID], -(loop));
 }
 
 void SoundManager::mixAudio(void *unused, Uint8 *stream, Uint32 len){
@@ -71,6 +47,9 @@ void SoundManager::mixAudio(void *unused, Uint8 *stream, Uint32 len){
 }
 
 void SoundManager::cleanup() {
-	for(int i = 0;i < SoundList.size();i++)
-       	SDL_FreeChunk(SoundList[i]);
+	for(int i = 0;i < SoundList.size();i++) {
+        Mix_FreeChunk(SoundList[i]);
+    }
+ 
+    SoundList.clear();
 }
