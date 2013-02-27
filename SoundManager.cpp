@@ -1,6 +1,6 @@
 //SoundManager.cpp
 #include "SoundManager.h"
-/*
+
 #define NUM_SOUNDS 2
 
 SoundManager::SoundManager(){
@@ -8,22 +8,22 @@ SoundManager::SoundManager(){
 	if(SDL_Init(SDL_INIT_AUDIO) < 0)
 		std::string msg = std::string("Could'nt initialize SDL");
 
-	  SDL_AudioSpec fmt;
-   	// Set 16-bit stereo audio at 44.1Khz
-   	fmt.freq = 44100;
-   	fmt.format = AUDIO_S16;
-   	fmt.channels = 2;
-   	fmt.samples = 512;        // A good value for games
-   	fmt.callback = mixAudio;
-   	fmt.userdata = NULL;
+	SDL_AudioSpec fmt;
+  // Set 16-bit stereo audio at 44.1Khz
+  fmt.freq = 44100;
+  fmt.format = AUDIO_S16;
+  fmt.channels = 2;
+  fmt.samples = 512;        // A good value for games
+  fmt.callback = mixAudio;
+  fmt.userdata = NULL;
 
-    size = 0;
+  size = 0;
 
 	// Open the audio device and start playing sound!
-   	if ( SDL_OpenAudio(&fmt, NULL) < 0 ) {
-       	fprintf(stderr, "Unable to open audio: %s\n", SDL_GetError());
-       	exit(1);
-   	}
+  if ( SDL_OpenAudio(&fmt, NULL) < 0 ) {
+    fprintf(stderr, "Unable to open audio: %s\n", SDL_GetError());
+    exit(1);
+  }
 
 
 }
@@ -74,4 +74,3 @@ void SoundManager::cleanup() {
 	for(int i = 0;i < SoundList.size();i++)
        	SDL_FreeChunk(SoundList[i]);
 }
-*/

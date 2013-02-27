@@ -2,7 +2,7 @@
 
 #ifndef _SOUNDMANAGER_H_
     #define _SOUNDMANAGER_H_
-/*
+
 
 #include "SDL/SDL.h"
 #include "SDL/SDL_audio.h"
@@ -32,5 +32,5 @@ class SoundManager{
 		void cleanup();
 		static SoundManager getInstance();
 };
-*/
+
 #endif
