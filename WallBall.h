@@ -67,6 +67,8 @@ protected:
     int ballBounceWall;
     int ballBouncePaddle;
     int ballReset;
+    int ballPowerUp;
+    Mix_Music* music;
  
     // Ogre::FrameListener
     virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);

@@ -42,6 +42,7 @@ WallBall::~WallBall(void)
     if (mTrayMgr) delete mTrayMgr;
     if (mCameraMan) delete mCameraMan;
    
+    Mix_FreeMusic(music);
     SoundManager::SoundControl.cleanup();
  
     Mix_CloseAudio();
@@ -312,13 +313,19 @@ bool WallBall::go(void)
     //load Sounds
     if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096) < 0)
         return false;
+    
     if((ballBounceWall = SoundManager::SoundControl.loadWAV("sound/slap2.wav")) == -1)
         return false;
     if((ballBouncePaddle = SoundManager::SoundControl.loadWAV("sound/slap1.wav")) == -1)
         return false;
     if((ballReset = SoundManager::SoundControl.loadWAV("sound/sword_hit_single2.wav")) == -1)
         return false;
+    if((ballPowerUp = SoundManager::SoundControl.loadWAV("sound/object_being_squash.wav")) == -1)
+        return false;
     SoundManager::SoundControl.playAudio();
+
+    music = Mix_LoadMUS("sound/risveglio.wav");
+    Mix_PlayMusic(music, -1);
     
 //-------------------------------------------------------------------------------------
     //create FrameListener
@@ -430,6 +437,8 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
     if(ballPosition.z>290 && ballPosition.z<300) {
         if( (ballPosition.x <= paddlePosition.x && ballPosition.x >= (paddlePosition.x - 100)) && (ballPosition.y >= (paddlePosition.y - 20) && ballPosition.y <= (paddlePosition.y + 20)) ){
             ballPosition.z = 290;
+            velocity.x += 100 * ((-paddlePosition.x + ballPosition.x)/100);
+            velocity.y += 100 * ((paddlePosition.y - ballPosition.y)/20);
             velocity.z *= -1;
             SoundManager::SoundControl.playClip(ballBouncePaddle, 0);
         }
