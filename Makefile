@@ -164,8 +164,8 @@ PKG_CONFIG = /usr/bin/pkg-config
 PKG_CONFIG_LIBDIR = 
 PKG_CONFIG_PATH = 
 RANLIB = ranlib
-SDL_CFLAGS = 
-SDL_LIBS = 
+SDL_mixer_CFLAGS = -D_GNU_SOURCE=1 -D_REENTRANT -I/usr/include/SDL  
+SDL_mixer_LIBS = -lSDL_mixer -lSDL  
 SED = /bin/sed
 SET_MAKE = 
 SHELL = /bin/bash
@@ -229,8 +229,8 @@ top_srcdir = .
 noinst_HEADERS = WallBall.h SoundManager.h Simulator.h
 WallBall_CPPFLAGS = -I$(top_srcdir)
 WallBall_SOURCES = WallBall.cpp SoundManager.cpp Simulator.cpp
-WallBall_CXXFLAGS = $(OGRE_CFLAGS) $(OIS_CFLAGS) $(bullet_CFLAGS) $(SDL_CFLAGS)
-WallBall_LDADD = $(OGRE_LIBS) $(OIS_LIBS) $(bullet_LIBS) $(SDL_LIBS)
+WallBall_CXXFLAGS = $(OGRE_CFLAGS) $(OIS_CFLAGS) $(bullet_CFLAGS) $(SDL_CFLAGS) $(SDL_mixer_CFLAGS)
+WallBall_LDADD = $(OGRE_LIBS) $(OIS_LIBS) $(bullet_LIBS) $(SDL_LIBS) $(SDL_mixer_LIBS)
 EXTRA_DIST = buildit makeit
 AUTOMAKE_OPTIONS = foreign
 all: config.h

@@ -66,6 +66,7 @@ protected:
     // Sounds
     int ballBounceWall;
     int ballBouncePaddle;
+    int ballReset;
  
     // Ogre::FrameListener
     virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);

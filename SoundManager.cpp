@@ -8,7 +8,7 @@ SoundManager::SoundManager(){}
 int SoundManager::loadWAV(char* file){
 	Mix_Chunk* TempSound = NULL;
  
-  if((TempSound = Mix_LoadWAV("sound/" + file)) == NULL) {
+  if((TempSound = Mix_LoadWAV(file)) == NULL) {
       return -1;
   }
  
@@ -29,21 +29,7 @@ void SoundManager::playClip(int clipID, int loop){
 	if(clipID < 0 || clipID >= SoundList.size()) return;
     if(SoundList[clipID] == NULL) return;
  
-    Mix_PlayChannel(-1, SoundList[ID], -(loop));
-}
-
-void SoundManager::mixAudio(void *unused, Uint8 *stream, Uint32 len){
-   	int i;
-   	Uint32 amount;
-
-   	for ( i=0; i<NUM_SOUNDS; ++i ) {
-       	amount = (SoundList[i].dlen-SoundList[i].dpos);
-       	if ( amount > len ) {
-           	amount = len;
-       	}
-       	SDL_MixAudio(stream, &SoundList[i].data[SoundList[i].dpos], amount, SDL_MIX_MAXVOLUME);
-       	SoundList[i].dpos += amount;
-   	}
+  Mix_PlayChannel(-1, SoundList[clipID], -(loop));
 }
 
 void SoundManager::cleanup() {

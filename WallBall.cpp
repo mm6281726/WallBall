@@ -35,10 +35,7 @@ WallBall::WallBall(void)
     mInputManager(0),
     mMouse(0),
     mKeyboard(0)
-{
-    if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096) < 0)
-        return false;
-}
+{}
 //-------------------------------------------------------------------------------------
 WallBall::~WallBall(void)
 {
@@ -313,13 +310,15 @@ bool WallBall::go(void)
 
 //-------------------------------------------------------------------------------------
     //load Sounds
-    if((ballBounceWall = SoundManager::SoundControl.loadWAV("punch_body_hit2.wav")) == -1) {
+    if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096) < 0)
         return false;
-    }
- 
-    if((ballBouncePaddle = SoundManager::SoundControl.loadWAV("slap1.wav")) == -1) {
+    if((ballBounceWall = SoundManager::SoundControl.loadWAV("sound/slap2.wav")) == -1)
         return false;
-    }
+    if((ballBouncePaddle = SoundManager::SoundControl.loadWAV("sound/slap1.wav")) == -1)
+        return false;
+    if((ballReset = SoundManager::SoundControl.loadWAV("sound/sword_hit_single2.wav")) == -1)
+        return false;
+    SoundManager::SoundControl.playAudio();
     
 //-------------------------------------------------------------------------------------
     //create FrameListener
@@ -445,7 +444,6 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
     ball->pitch( Ogre::Degree( evt.timeSinceLastFrame*velocity.x ) );
     ball->yaw( Ogre::Degree( evt.timeSinceLastFrame*velocity.y ) );
     ball->roll( Ogre::Degree( evt.timeSinceLastFrame*velocity.z ) );
-    //mCamera->lookAt(mSceneMgr->getSceneNode("BallNode")->getPosition());
     
     return true;
 }
@@ -542,10 +540,11 @@ bool WallBall::keyPressed( const OIS::KeyEvent &arg )
 
     else if (arg.key == OIS::KC_RETURN)
     {
+        SoundManager::SoundControl.playClip(ballReset, 0);
         mSceneMgr->getSceneNode("BallNode")->setPosition(0,0,0);
         velocity.z *= -1;
     }
- 
+
     mCameraMan->injectKeyDown(arg);
     return true;
 }
