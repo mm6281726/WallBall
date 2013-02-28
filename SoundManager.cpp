@@ -29,7 +29,7 @@ void SoundManager::playClip(int clipID, int loop){
 	if(clipID < 0 || clipID >= SoundList.size()) return;
     if(SoundList[clipID] == NULL) return;
  
-  Mix_PlayChannel(-1, SoundList[clipID], -(loop));
+  Mix_PlayChannel(-1, SoundList[clipID], loop);
 }
 
 void SoundManager::cleanup() {

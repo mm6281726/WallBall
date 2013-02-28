@@ -69,6 +69,8 @@ protected:
     int ballReset;
     int ballPowerUp;
     Mix_Music* music;
+
+    int score;
  
     // Ogre::FrameListener
     virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);
