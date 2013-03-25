@@ -447,6 +447,10 @@ bool WallBall::go(void)
     mDetailsPanel->setParamValue(9, "Bilinear");
     mDetailsPanel->setParamValue(10, "Solid");
 
+    mTrayMgr->showCursor();
+    mTrayMgr->showBackdrop("Examples/Chrome");
+    mDetailsPanel->hide();
+
     Ogre::FontManager::getSingleton().getByName("SdkTrays/Caption")->load();
     OgreBites::Button* singleplayer = mTrayMgr->createButton(OgreBites::TL_CENTER, "Singleplayer", "Singleplayer", 250);
     OgreBites::Button* multiplayer = mTrayMgr->createButton(OgreBites::TL_CENTER, "Multiplayer", "Multiplayer", 250);
@@ -472,6 +476,7 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
     mMouse->capture();
     
     mTrayMgr->frameRenderingQueued(evt);
+    mTrayMgr->adjustTrays(); 
 
     if(!singleplayer && !multiplayer){
         mTrayMgr->showCursor();
@@ -479,10 +484,7 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
         mDetailsPanel->hide();
         
     }
-    else{
-        mTrayMgr->hideCursor();
-        mTrayMgr->hideBackdrop();
-        mDetailsPanel->show();
+    else {
         if (!mTrayMgr->isDialogVisible())
         {
             mCameraMan->frameRenderingQueued(evt);   // if dialog isn't up, then update the camera
@@ -717,20 +719,20 @@ bool WallBall::keyPressed( const OIS::KeyEvent &arg )
 
     else if (arg.key == OIS::KC_RETURN)
     {       
-				SoundManager::SoundControl.playClip(ballReset, 0);
+		SoundManager::SoundControl.playClip(ballReset, 0);
         mSceneMgr->getSceneNode("BallNode")->setPosition(0,0,0);
-	velocity = Ogre::Vector3(0.f,0.f,300.f);
-  //delete gameBall;
-	world->removeRigidBody(gameBall);
-	gameBall = addSphere(10,0,0,0,5);
+	    velocity = Ogre::Vector3(0.f,0.f,300.f);
+
+    	world->removeRigidBody(gameBall);
+	    gameBall = addSphere(10,0,0,0,5);
 
 
-	timer.reset();
-	effect=0;
-	hasPowerUp=false;
-	mSceneMgr->destroySceneNode("PowerUpNode");
-	score=0;
-	inPlay = true;
+    	timer.reset();
+    	effect=0;
+    	hasPowerUp=false;
+    	mSceneMgr->destroySceneNode("PowerUpNode");
+    	score=0;
+    	inPlay = true;
         velocity.z *= -1;
     }
 
@@ -748,7 +750,6 @@ bool WallBall::mouseMoved( const OIS::MouseEvent &arg )
 {
     if (mTrayMgr->injectMouseMove(arg)) return true;
     //mCameraMan->injectMouseMove(arg);
-    
     
     Ogre::SceneNode* paddleNode = mSceneMgr->getSceneNode("PaddleNode");
     paddleNode->translate(arg.state.X.rel/2, -(arg.state.Y.rel)/2, 0);
@@ -777,10 +778,12 @@ bool WallBall::mousePressed( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
     {
         OgreBites::Button* pressedButton;
         mTrayMgr->buttonHit(pressedButton);
-        if (pressedButton->getName().compare("Singleplayer") == 0)
+        //if (pressedButton->getName().compare("Singleplayer") == 0)
             singleplayer = true; 
-        if (pressedButton->getName().compare("Multiplayer") == 0)
+        //if (pressedButton->getName().compare("Multiplayer") == 0)
             multiplayer = true;
+        mTrayMgr->hideAll();
+        mDetailsPanel->show();
         return true;
     }
     mCameraMan->injectMouseDown(arg, id);
