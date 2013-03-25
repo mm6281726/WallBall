@@ -50,7 +50,15 @@ protected:
     Ogre::RenderWindow* mWindow;
     Ogre::String mResourcesCfg;
     Ogre::String mPluginsCfg;
- 
+    Ogre::Timer timer;
+    bool inPlay;
+    int score;
+
+    //Powerups
+    void generatePowerup(void);
+    bool hasPowerUp;
+    int effect;
+
     // OgreBites
     OgreBites::SdkTrayManager* mTrayMgr;
     OgreBites::SdkCameraMan* mCameraMan;      // basic camera controller
@@ -69,8 +77,6 @@ protected:
     int ballReset;
     int ballPowerUp;
     Mix_Music* music;
-
-    int score;
  
     // Ogre::FrameListener
     virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);

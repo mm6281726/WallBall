@@ -16,8 +16,16 @@ This source file is part of the
 */
 #include "WallBall.h"
 #include <time.h>
+#include <btBulletDynamicsCommon.h>
 
 Ogre::Vector3 velocity(0,0,0);
+btDynamicsWorld* world;	//every physical object go to the world
+btDispatcher* dispatcher;	//what collision algorithm to use?
+btCollisionConfiguration* collisionConfig;	//what collision algorithm to use?
+btBroadphaseInterface* broadphase;	//should Bullet examine every object, or just what close to each other
+btConstraintSolver* solver;					//solve collisions, apply forces, impulses
+std::vector<btRigidBody*> bodies; 
+btRigidBody* gameBall;
  
 //-------------------------------------------------------------------------------------
 WallBall::WallBall(void)
@@ -53,6 +61,62 @@ WallBall::~WallBall(void)
     delete mRoot;
 }
  
+btRigidBody* addPlane(float x,float y,float z,btVector3 normal)
+{
+	//similar to createSphere
+	btTransform t;
+	t.setIdentity();
+	t.setOrigin(btVector3(x,y,z));
+	btStaticPlaneShape* plane=new btStaticPlaneShape(normal,0);
+	btMotionState* motion=new btDefaultMotionState(t);
+	btRigidBody::btRigidBodyConstructionInfo info(0.0,motion,plane);
+	btRigidBody* body=new btRigidBody(info);
+  body->setRestitution(1.0);
+	world->addRigidBody(body);
+	bodies.push_back(body);
+	return body;
+}
+
+btRigidBody* addSphere(float rad,float x,float y,float z,float mass)
+{
+	btTransform t;	//position and rotation
+	t.setIdentity();
+	t.setOrigin(btVector3(x,y,z));	//put it to x,y,z coordinates
+	btSphereShape* sphere=new btSphereShape(rad);	//it's a sphere, so use sphereshape
+	btVector3 inertia(0,0,0);	//inertia is 0,0,0 for static object, else
+	if(mass!=0.0)
+		sphere->calculateLocalInertia(mass,inertia);	//it can be determined by this function (for all kind of shapes)
+	
+	btMotionState* motion=new btDefaultMotionState(t);	//set the position (and motion)
+	btRigidBody::btRigidBodyConstructionInfo info(mass,motion,sphere,inertia);	//create the constructioninfo, you can create multiple bodies with the same info
+	btRigidBody* body=new btRigidBody(info);	//let's create the body itself
+  body->setRestitution(1);
+	body->setLinearVelocity(btVector3(0,0,-300));
+	world->addRigidBody(body);	//and let the world know about it
+	bodies.push_back(body);	//to be easier to clean, I store them a vector
+	return body;
+}
+
+void initPhysics(void)
+{
+	//pretty much initialize everything logically
+	collisionConfig=new btDefaultCollisionConfiguration();
+	dispatcher=new btCollisionDispatcher(collisionConfig);
+	broadphase=new btDbvtBroadphase();
+	solver=new btSequentialImpulseConstraintSolver();
+	world=new btDiscreteDynamicsWorld(dispatcher,broadphase,solver,collisionConfig);
+	world->setGravity(btVector3(0,0,0));	//gravity on Earth
+
+	addPlane(-100,0,0,btVector3(1,0,0));
+	addPlane(100,0,0,btVector3(-1,0,0));
+  addPlane(0,-100,0,btVector3(0,1,0));
+	addPlane(0,100,0,btVector3(0,-1,0));
+	addPlane(0,0,-300,btVector3(0,0,1));
+	//addPlane(0,0,300,btVector3(0,0,-1));
+
+	gameBall = addSphere(10,0,0,0,5);
+}
+
 bool WallBall::go(void)
 {
 #ifdef _DEBUG
@@ -62,7 +126,9 @@ bool WallBall::go(void)
     mResourcesCfg = "resources.cfg";
     mPluginsCfg = "plugins.cfg";
 #endif
- 
+    hasPowerUp = false;
+    score=0;
+    effect=0;
     // construct Ogre::Root
     mRoot = new Ogre::Root(mPluginsCfg);
  
@@ -74,7 +140,6 @@ bool WallBall::go(void)
  
     // Go through all sections & settings in the file
     Ogre::ConfigFile::SectionIterator seci = cf.getSectionIterator();
- 
     Ogre::String secName, typeName, archName;
     while (seci.hasMoreElements())
     {
@@ -140,18 +205,22 @@ bool WallBall::go(void)
     Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
 //-------------------------------------------------------------------------------------
     // Create the scene
+    inPlay = true;
     Ogre::Entity* ball = mSceneMgr->createEntity("Ball", "sphere.mesh");
- 
+    mSceneMgr->createEntity("PowerUpSphere", "sphere.mesh");
+    mSceneMgr->createEntity("PowerUpCube", "cube.mesh");
     Ogre::SceneNode* ballNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("BallNode");
     ballNode->attachObject(ball);
     ballNode->scale(.1,.1,.1);
-
-    Ogre::Entity* paddle = mSceneMgr->createEntity("Paddle", "ninja.mesh");
+    mCamera->setPolygonMode(Ogre::PM_WIREFRAME);
+    Ogre::Entity* paddle = mSceneMgr->createEntity("Paddle", "cube.mesh");
     Ogre::SceneNode* paddleNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("PaddleNode");
     paddleNode->attachObject(paddle);
     paddleNode->scale(.50,.50,.50);
-    paddleNode->roll(Ogre::Degree(90));
+    paddleNode->scale(1.5,.8,.2);
+  //  paddleNode->roll(Ogre::Degree(90));
     paddleNode->setPosition(0, -50, 300);
+   // paddle->setMaterialName("paddleTexture.tga");				Try to make transparent
     
     srand ( time(NULL) );
     velocity.x = rand() % 10*20;
@@ -309,6 +378,8 @@ bool WallBall::go(void)
     ballNode->attachObject(spotLight5);
     ballNode->attachObject(spotLight6);
 
+		initPhysics();
+
 //-------------------------------------------------------------------------------------
     //load Sounds
     if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096) < 0)
@@ -359,14 +430,14 @@ bool WallBall::go(void)
     Ogre::StringVector items;
     //items.push_back("Score: ");
     
-    items.push_back("cam.pX");
-    items.push_back("cam.pY");
-    items.push_back("cam.pZ");
+    items.push_back("Score");
+    items.push_back("");//cam.pY");
+    items.push_back("");//cam.pZ");
+    items.push_back("");//");
     items.push_back("");
-    items.push_back("cam.oW");
-    items.push_back("cam.oX");
-    items.push_back("cam.oY");
-    items.push_back("cam.oZ");
+    items.push_back("");
+    items.push_back("Power Up");
+    items.push_back("");
     items.push_back("");
     items.push_back("Filtering");
     items.push_back("Poly Mode");
@@ -385,6 +456,7 @@ bool WallBall::go(void)
  
 bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
 {
+
     if(mWindow->isClosed())
         return false;
  
@@ -394,7 +466,7 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
     //Need to capture/update each device
     mKeyboard->capture();
     mMouse->capture();
- 
+    
     mTrayMgr->frameRenderingQueued(evt);
  
     if (!mTrayMgr->isDialogVisible())
@@ -402,58 +474,154 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
         mCameraMan->frameRenderingQueued(evt);   // if dialog isn't up, then update the camera
         if (mDetailsPanel->isVisible())   // if details panel is visible, then update its contents
         {
-            mDetailsPanel->setParamValue(0, Ogre::StringConverter::toString(mCamera->getDerivedPosition().x));
-            mDetailsPanel->setParamValue(1, Ogre::StringConverter::toString(mCamera->getDerivedPosition().y));
-            mDetailsPanel->setParamValue(2, Ogre::StringConverter::toString(mCamera->getDerivedPosition().z));
-            mDetailsPanel->setParamValue(4, Ogre::StringConverter::toString(mCamera->getDerivedOrientation().w));
-            mDetailsPanel->setParamValue(5, Ogre::StringConverter::toString(mCamera->getDerivedOrientation().x));
-            mDetailsPanel->setParamValue(6, Ogre::StringConverter::toString(mCamera->getDerivedOrientation().y));
-            mDetailsPanel->setParamValue(7, Ogre::StringConverter::toString(mCamera->getDerivedOrientation().z));
+	    if(inPlay){
+            	mDetailsPanel->setParamValue(0, Ogre::StringConverter::toString((timer.getMilliseconds()/100)+score));
+		mDetailsPanel->setParamValue(1, "");
+		}
+	    else
+            	mDetailsPanel->setParamValue(1, "GAME OVER");
+            mDetailsPanel->setParamValue(2, "Bounce the ball for");
+            mDetailsPanel->setParamValue(3, "as long as possible");
+            mDetailsPanel->setParamValue(4, "to win!");
+            mDetailsPanel->setParamValue(6, "");
+	    if(effect<=1)
+	    {
+            	mDetailsPanel->setParamValue(6, "Accelerate");
+	    }
+	    else if(effect>=2)
+	    {
+           	mDetailsPanel->setParamValue(6, "Slow");
+	    }
+	    mDetailsPanel->setParamValue(7, "Press Enter to Restart");
         }
     }
-    Ogre::SceneNode* paddle = mSceneMgr->getSceneNode("PaddleNode");
+    
+		Ogre::SceneNode* ball = mSceneMgr->getSceneNode("BallNode");
+
+		world->stepSimulation(1/60.0);
+    btVector3 v = gameBall->getLinearVelocity();
+    if(v[2] < 250 && v[2] >= 0)
+			gameBall->setLinearVelocity(btVector3(v[0],v[1],250));
+    else if(v[2] > -250 && v[2] < 0)
+      gameBall->setLinearVelocity(btVector3(v[0],v[1],-250));
+
+    v = gameBall->getLinearVelocity();
+    if(v[1] < 100 && v[1] >= 0)
+			gameBall->setLinearVelocity(btVector3(v[0],100,v[2]));
+    else if(v[1] > -250 && v[1] < 0)
+      gameBall->setLinearVelocity(btVector3(v[0],-100,v[2]));
+
+    v = gameBall->getLinearVelocity();
+    if(v[0] < 250 && v[0] >= 0)
+			gameBall->setLinearVelocity(btVector3(100,v[1],v[2]));
+    else if(v[0] > -250 && v[0] < 0)
+      gameBall->setLinearVelocity(btVector3(-100,v[1],v[2]));
+		
+		btTransform t;
+	  gameBall->getMotionState()->getWorldTransform(t);
+    btVector3 position = t.getOrigin();
+    ball->setPosition(Ogre::Vector3((float)position[0],(float)position[1],(float)position[2]));
+
+    btVector3 btVelocity = gameBall->getLinearVelocity();
+
+		Ogre::SceneNode* paddle = mSceneMgr->getSceneNode("PaddleNode");
     Ogre::Vector3 paddlePosition = paddle->getPosition();
 
-    Ogre::SceneNode* ball = mSceneMgr->getSceneNode("BallNode");
+
     Ogre::Vector3 ballPosition = ball->getPosition();
     if(ballPosition.x>90) {
         ballPosition.x = 90;
         velocity.x *= -1;
+				gameBall->setLinearVelocity(btVector3(-1*btVelocity[0],btVelocity[1],btVelocity[2]));
         SoundManager::SoundControl.playClip(ballBounceWall, 0);
     } else if(ballPosition.x<-90) {
         ballPosition.x = -90;
         velocity.x *= -1;
+				gameBall->setLinearVelocity(btVector3(-1*btVelocity[0],btVelocity[1],btVelocity[2]));
         SoundManager::SoundControl.playClip(ballBounceWall, 0);
     }
     if(ballPosition.y>90) {
         ballPosition.y=90;
         velocity.y *= -1;
+				gameBall->setLinearVelocity(btVector3(btVelocity[0],-1*btVelocity[1],btVelocity[2]));
         SoundManager::SoundControl.playClip(ballBounceWall, 0);
     } else if(ballPosition.y<-90) {
         ballPosition.y = -90;
         velocity.y *= -1;
+				gameBall->setLinearVelocity(btVector3(btVelocity[0],-1*btVelocity[1],btVelocity[2]));
         SoundManager::SoundControl.playClip(ballBounceWall, 0);
-    }
+    } 
     if(ballPosition.z>290 && ballPosition.z<300) {
-        if( (ballPosition.x <= paddlePosition.x && ballPosition.x >= (paddlePosition.x - 100)) && (ballPosition.y >= (paddlePosition.y - 20) && ballPosition.y <= (paddlePosition.y + 20)) ){
+  /*      if( (ballPosition.x <= paddlePosition.x && ballPosition.x >= (paddlePosition.x - 100)) && (ballPosition.y >= (paddlePosition.y - 20) && ballPosition.y <= (paddlePosition.y + 20)) ){
             ballPosition.z = 290;
-            velocity.x += 100 * ((-paddlePosition.x + ballPosition.x)/100);
-            velocity.y += 100 * ((paddlePosition.y - ballPosition.y)/20);
+            velocity.x += 100 * (-(paddlePosition.x - ballPosition.x)/100);
+            velocity.y += 100 * (-(paddlePosition.y - ballPosition.y)/20);
             velocity.z *= -1;
             SoundManager::SoundControl.playClip(ballBouncePaddle, 0);
-        }
+        }*/
+	Ogre::SceneNode* paddleNode = mSceneMgr->getSceneNode("PaddleNode");
+	paddleNode->_update(false,false);
+	Ogre::AxisAlignedBox bounds = paddleNode->_getWorldAABB();
+	Ogre::Vector3 max = bounds.getMaximum();
+	Ogre::Vector3 min = bounds.getMinimum();
+	if(ballPosition.x-10 <= max.x && ballPosition.y-10 <= max.y && ballPosition.x+10 >= min.x && ballPosition.y+10 >= min.y)
+	{
+		ballPosition.z = 290;
+		velocity.x += 100 * (-(paddlePosition.x - ballPosition.x)/(bounds.getSize().x/2 + 10));
+		velocity.y += 100 * (-(paddlePosition.y - ballPosition.y)/(bounds.getSize().y/2 + 10));
+		velocity.z *= -1;
+		gameBall->setLinearVelocity(btVector3(btVelocity[0]+ (100 * (-(paddlePosition.x - ballPosition.x)/(bounds.getSize().x/2 + 10))),
+																					btVelocity[1]+ (100 * (-(paddlePosition.y - ballPosition.y)/(bounds.getSize().y/2 + 10))),-1*btVelocity[2]));
+		SoundManager::SoundControl.playClip(ballBouncePaddle, 0);
+	}
     } else if(ballPosition.z<-290) {
         ballPosition.z = -290;
         velocity.z *= -1;
+				gameBall->setLinearVelocity(btVector3(btVelocity[0],btVelocity[1],-1*btVelocity[2]));
         SoundManager::SoundControl.playClip(ballBounceWall, 0);
     }
-
+    if(ballPosition.z>300){
+	inPlay=false;
+    }
+    		
     ball->setPosition(ballPosition);
-    ball->translate(evt.timeSinceLastFrame*velocity);
+    //ball->translate(evt.timeSinceLastFrame*velocity);
+
+		t.setOrigin(btVector3(ballPosition.x,ballPosition.y,ballPosition.z));
+	  gameBall->getMotionState()->setWorldTransform(t);
+		
+
+	if(hasPowerUp)				///Powerup Collisions (if no bullet)
+	{
+		Ogre::SceneNode* powerupNode = mSceneMgr->getSceneNode("PowerUpNode");
+		powerupNode->_update(false,false);
+		Ogre::AxisAlignedBox bounds =powerupNode->_getWorldAABB();
+		Ogre::Vector3 max = bounds.getMaximum();
+		Ogre::Vector3 min = bounds.getMinimum();
+		if(ballPosition.x <= max.x && ballPosition.y <= max.y && ballPosition.z <= max.z && ballPosition.x >= min.x && ballPosition.y >= min.y && ballPosition.z >= min.z)
+		{
+			hasPowerUp=false;
+			if(effect<=1)
+			{
+				score+=100;
+				velocity += Ogre::Vector3((velocity.x/Ogre::Math::Abs(velocity.x))*100.f,(velocity.y/Ogre::Math::Abs(velocity.y))*100.f,(velocity.z/Ogre::Math::Abs(velocity.z))*100.f); 
+        gameBall->setLinearVelocity(btVector3((velocity.x/Ogre::Math::Abs(velocity.x))*100.f,(velocity.y/Ogre::Math::Abs(velocity.y))*100.f,(velocity.z/Ogre::Math::Abs(velocity.z))*100.f));
+			}
+			if(effect>=2)
+			{
+				score+=100;
+				velocity /= 1.5;
+				gameBall->setLinearVelocity(btVector3(btVelocity[0]/1.5,btVelocity[1]/1.5,-1*btVelocity[2]/1.5));
+			}	
+			mSceneMgr->destroySceneNode("PowerUpNode");	
+		}
+	}
     ball->pitch( Ogre::Degree( evt.timeSinceLastFrame*velocity.x ) );
     ball->yaw( Ogre::Degree( evt.timeSinceLastFrame*velocity.y ) );
     ball->roll( Ogre::Degree( evt.timeSinceLastFrame*velocity.z ) );
-    
+    generatePowerup();
+
+	//velocity += Ogre::Vector3((velocity.x/Ogre::Math::Abs(velocity.x))*.1f,(velocity.y/Ogre::Math::Abs(velocity.y))*.1f,(velocity.z/Ogre::Math::Abs(velocity.z))*.1f); 
     return true;
 }
 //-------------------------------------------------------------------------------------
@@ -536,9 +704,21 @@ bool WallBall::keyPressed( const OIS::KeyEvent &arg )
     }
 
     else if (arg.key == OIS::KC_RETURN)
-    {
-        SoundManager::SoundControl.playClip(ballReset, 0);
+    {       
+				SoundManager::SoundControl.playClip(ballReset, 0);
         mSceneMgr->getSceneNode("BallNode")->setPosition(0,0,0);
+	velocity = Ogre::Vector3(0.f,0.f,300.f);
+  //delete gameBall;
+	world->removeRigidBody(gameBall);
+	gameBall = addSphere(10,0,0,0,5);
+
+
+	timer.reset();
+	effect=0;
+	hasPowerUp=false;
+	mSceneMgr->destroySceneNode("PowerUpNode");
+	score=0;
+	inPlay = true;
         velocity.z *= -1;
     }
 
@@ -557,19 +737,26 @@ bool WallBall::mouseMoved( const OIS::MouseEvent &arg )
     //if (mTrayMgr->injectMouseMove(arg)) return true;
     //mCameraMan->injectMouseMove(arg);
 
-    Ogre::SceneNode* p = mSceneMgr->getSceneNode("PaddleNode");
-    p->translate(arg.state.X.rel/2, -(arg.state.Y.rel)/2, 0);
-    Ogre::Vector3 position = p->getPosition();
-    if(position.x > 100)
-        position.x = 100;
-    else if(position.x < -10)
-        position.x = -10;
-    if(position.y > 90)
-        position.y = 90;
-    else if(position.y < -100)
-        position.y = -100;
+ //   Ogre::SceneNode* p = mSceneMgr->getSceneNode("PaddleNode");
+    
+    
+    Ogre::SceneNode* paddleNode = mSceneMgr->getSceneNode("PaddleNode");
+    paddleNode->translate(arg.state.X.rel/2, -(arg.state.Y.rel)/2, 0);
+    Ogre::Vector3 position = paddleNode->getPosition();
+    paddleNode->_update(false,false);
+    Ogre::AxisAlignedBox bounds = paddleNode->_getWorldAABB();
+    Ogre::Vector3 max = bounds.getMaximum();
+    Ogre::Vector3 min = bounds.getMinimum();
+    if(max.x > 100)
+        position.x -= max.x - 100;
+    else if(min.x < -100)
+        position.x -= min.x + 100;
+    if(max.y > 100)
+        position.y -= max.y - 100;
+    else if(min.y < -100)
+        position.y -= min.y + 100;
 
-    p->setPosition(position);
+    paddleNode->setPosition(position);
     mSceneMgr->getCamera("PlayerCam")->lookAt(position/2);
     return true;
 }
@@ -615,6 +802,42 @@ void WallBall::windowClosed(Ogre::RenderWindow* rw)
             mInputManager = 0;
         }
     }
+}
+
+
+void WallBall::generatePowerup(void)
+{
+	if(/*Ogre::Math::RangeRandom(0,5000) > 10 ||*/ hasPowerUp)
+		return;
+	//PowerUp spawned = PowerUp::PowerUp(Ogre::Math::RangeRandom(1,4));
+	effect = Ogre::Math::RangeRandom(0,3);
+	Ogre::Entity* power;
+	if(effect <= 1)
+	{
+		power = mSceneMgr->getEntity("PowerUpSphere");
+	}
+	if(effect >= 2)
+	{
+		power = mSceneMgr->getEntity("PowerUpSphere");
+	}
+	Ogre::SceneNode* powerupNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("PowerUpNode");
+	powerupNode->scale(0.4f,0.4f,0.4f);
+	float Powx = Ogre::Math::RangeRandom(0,200)-100;
+	float Powy = Ogre::Math::RangeRandom(0,200)-100;
+	float Powz = Ogre::Math::RangeRandom(0,600)-300;
+	powerupNode->translate(Ogre::Vector3(Powx,Powy,Powz));
+	powerupNode->attachObject(power);
+	powerupNode->_update(false,false);
+	hasPowerUp=true;
+/*	if(effect == 3)
+	{
+		power = mSceneMgr->createEntity("PowerUp", "sphere.mesh");
+	}
+	if(effect == 4)
+	{
+		power = mSceneMgr->createEntity("PowerUp", "sphere.mesh");
+	}*/
+	
 }
  
  
