@@ -36,6 +36,9 @@ This source file is part of the
 
 #include "Simulator.h"
 #include "SoundManager.h"
+
+#include <time.h>
+#include <btBulletDynamicsCommon.h>
  
 class WallBall : public Ogre::FrameListener, public Ogre::WindowEventListener, public OIS::KeyListener, public OIS::MouseListener, OgreBites::SdkTrayListener
 {
@@ -77,6 +80,10 @@ protected:
     int ballReset;
     int ballPowerUp;
     Mix_Music* music;
+
+    //SDK Trays
+    bool singleplayer;
+    bool multiplayer;
  
     // Ogre::FrameListener
     virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);

@@ -15,8 +15,6 @@ This source file is part of the
 -----------------------------------------------------------------------------
 */
 #include "WallBall.h"
-#include <time.h>
-#include <btBulletDynamicsCommon.h>
 
 Ogre::Vector3 velocity(0,0,0);
 btDynamicsWorld* world;	//every physical object go to the world
@@ -42,7 +40,9 @@ WallBall::WallBall(void)
     mShutDown(false),
     mInputManager(0),
     mMouse(0),
-    mKeyboard(0)
+    mKeyboard(0),
+    singleplayer(false),
+    multiplayer(false)
 {}
 //-------------------------------------------------------------------------------------
 WallBall::~WallBall(void)
@@ -109,7 +109,7 @@ void initPhysics(void)
 
 	addPlane(-100,0,0,btVector3(1,0,0));
 	addPlane(100,0,0,btVector3(-1,0,0));
-  addPlane(0,-100,0,btVector3(0,1,0));
+    addPlane(0,-100,0,btVector3(0,1,0));
 	addPlane(0,100,0,btVector3(0,-1,0));
 	addPlane(0,0,-300,btVector3(0,0,1));
 	//addPlane(0,0,300,btVector3(0,0,-1));
@@ -378,7 +378,7 @@ bool WallBall::go(void)
     ballNode->attachObject(spotLight5);
     ballNode->attachObject(spotLight6);
 
-		initPhysics();
+	initPhysics();
 
 //-------------------------------------------------------------------------------------
     //load Sounds
@@ -424,7 +424,7 @@ bool WallBall::go(void)
     Ogre::WindowEventUtilities::addWindowEventListener(mWindow, this);
  
     mTrayMgr = new OgreBites::SdkTrayManager("InterfaceName", mWindow, mMouse, this);
-    mTrayMgr->hideCursor();
+    
  
     // create a params panel for displaying sample details
     Ogre::StringVector items;
@@ -446,6 +446,10 @@ bool WallBall::go(void)
     mDetailsPanel = mTrayMgr->createParamsPanel(OgreBites::TL_NONE, "DetailsPanel", 200, items);
     mDetailsPanel->setParamValue(9, "Bilinear");
     mDetailsPanel->setParamValue(10, "Solid");
+
+    Ogre::FontManager::getSingleton().getByName("SdkTrays/Caption")->load();
+    OgreBites::Button* singleplayer = mTrayMgr->createButton(OgreBites::TL_CENTER, "Singleplayer", "Singleplayer", 250);
+    OgreBites::Button* multiplayer = mTrayMgr->createButton(OgreBites::TL_CENTER, "Multiplayer", "Multiplayer", 250);
  
     mRoot->addFrameListener(this);
 //-------------------------------------------------------------------------------------
@@ -468,160 +472,168 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
     mMouse->capture();
     
     mTrayMgr->frameRenderingQueued(evt);
- 
-    if (!mTrayMgr->isDialogVisible())
-    {
-        mCameraMan->frameRenderingQueued(evt);   // if dialog isn't up, then update the camera
-        if (mDetailsPanel->isVisible())   // if details panel is visible, then update its contents
+
+    if(!singleplayer && !multiplayer){
+        mTrayMgr->showCursor();
+        mTrayMgr->showBackdrop("Examples/Chrome");
+        mDetailsPanel->hide();
+        
+    }
+    else{
+        mTrayMgr->hideCursor();
+        mTrayMgr->hideBackdrop();
+        mDetailsPanel->show();
+        if (!mTrayMgr->isDialogVisible())
         {
-	    if(inPlay){
+            mCameraMan->frameRenderingQueued(evt);   // if dialog isn't up, then update the camera
+            if (mDetailsPanel->isVisible())   // if details panel is visible, then update its contents
+            {
+	        if(inPlay){
             	mDetailsPanel->setParamValue(0, Ogre::StringConverter::toString((timer.getMilliseconds()/100)+score));
-		mDetailsPanel->setParamValue(1, "");
-		}
-	    else
-            	mDetailsPanel->setParamValue(1, "GAME OVER");
+		        mDetailsPanel->setParamValue(1, "");
+		    }else
+                mDetailsPanel->setParamValue(1, "GAME OVER");
+
             mDetailsPanel->setParamValue(2, "Bounce the ball for");
             mDetailsPanel->setParamValue(3, "as long as possible");
             mDetailsPanel->setParamValue(4, "to win!");
             mDetailsPanel->setParamValue(6, "");
-	    if(effect<=1)
-	    {
+
+	       if(effect<=1)
             	mDetailsPanel->setParamValue(6, "Accelerate");
-	    }
-	    else if(effect>=2)
-	    {
-           	mDetailsPanel->setParamValue(6, "Slow");
-	    }
-	    mDetailsPanel->setParamValue(7, "Press Enter to Restart");
+	        else if(effect>=2)
+           	    mDetailsPanel->setParamValue(6, "Slow");
+
+	        mDetailsPanel->setParamValue(7, "Press Enter to Restart");
+            }
         }
-    }
     
 		Ogre::SceneNode* ball = mSceneMgr->getSceneNode("BallNode");
 
 		world->stepSimulation(1/60.0);
-    btVector3 v = gameBall->getLinearVelocity();
-    if(v[2] < 250 && v[2] >= 0)
+        btVector3 v = gameBall->getLinearVelocity();
+        if(v[2] < 250 && v[2] >= 0)
 			gameBall->setLinearVelocity(btVector3(v[0],v[1],250));
-    else if(v[2] > -250 && v[2] < 0)
-      gameBall->setLinearVelocity(btVector3(v[0],v[1],-250));
+        else if(v[2] > -250 && v[2] < 0)
+            gameBall->setLinearVelocity(btVector3(v[0],v[1],-250));
 
-    v = gameBall->getLinearVelocity();
-    if(v[1] < 100 && v[1] >= 0)
+        v = gameBall->getLinearVelocity();
+        if(v[1] < 100 && v[1] >= 0)
 			gameBall->setLinearVelocity(btVector3(v[0],100,v[2]));
-    else if(v[1] > -250 && v[1] < 0)
-      gameBall->setLinearVelocity(btVector3(v[0],-100,v[2]));
+        else if(v[1] > -250 && v[1] < 0)
+            gameBall->setLinearVelocity(btVector3(v[0],-100,v[2]));
 
-    v = gameBall->getLinearVelocity();
-    if(v[0] < 250 && v[0] >= 0)
+        v = gameBall->getLinearVelocity();
+        if(v[0] < 250 && v[0] >= 0)
 			gameBall->setLinearVelocity(btVector3(100,v[1],v[2]));
-    else if(v[0] > -250 && v[0] < 0)
-      gameBall->setLinearVelocity(btVector3(-100,v[1],v[2]));
+        else if(v[0] > -250 && v[0] < 0)
+            gameBall->setLinearVelocity(btVector3(-100,v[1],v[2]));
 		
 		btTransform t;
-	  gameBall->getMotionState()->getWorldTransform(t);
-    btVector3 position = t.getOrigin();
-    ball->setPosition(Ogre::Vector3((float)position[0],(float)position[1],(float)position[2]));
+	    gameBall->getMotionState()->getWorldTransform(t);
+        btVector3 position = t.getOrigin();
+        ball->setPosition(Ogre::Vector3((float)position[0],(float)position[1],(float)position[2]));
 
-    btVector3 btVelocity = gameBall->getLinearVelocity();
+        btVector3 btVelocity = gameBall->getLinearVelocity();
 
 		Ogre::SceneNode* paddle = mSceneMgr->getSceneNode("PaddleNode");
-    Ogre::Vector3 paddlePosition = paddle->getPosition();
+        Ogre::Vector3 paddlePosition = paddle->getPosition();
 
 
-    Ogre::Vector3 ballPosition = ball->getPosition();
-    if(ballPosition.x>90) {
-        ballPosition.x = 90;
-        velocity.x *= -1;
-				gameBall->setLinearVelocity(btVector3(-1*btVelocity[0],btVelocity[1],btVelocity[2]));
-        SoundManager::SoundControl.playClip(ballBounceWall, 0);
-    } else if(ballPosition.x<-90) {
-        ballPosition.x = -90;
-        velocity.x *= -1;
-				gameBall->setLinearVelocity(btVector3(-1*btVelocity[0],btVelocity[1],btVelocity[2]));
-        SoundManager::SoundControl.playClip(ballBounceWall, 0);
-    }
-    if(ballPosition.y>90) {
-        ballPosition.y=90;
-        velocity.y *= -1;
-				gameBall->setLinearVelocity(btVector3(btVelocity[0],-1*btVelocity[1],btVelocity[2]));
-        SoundManager::SoundControl.playClip(ballBounceWall, 0);
-    } else if(ballPosition.y<-90) {
-        ballPosition.y = -90;
-        velocity.y *= -1;
-				gameBall->setLinearVelocity(btVector3(btVelocity[0],-1*btVelocity[1],btVelocity[2]));
-        SoundManager::SoundControl.playClip(ballBounceWall, 0);
-    } 
-    if(ballPosition.z>290 && ballPosition.z<300) {
-  /*      if( (ballPosition.x <= paddlePosition.x && ballPosition.x >= (paddlePosition.x - 100)) && (ballPosition.y >= (paddlePosition.y - 20) && ballPosition.y <= (paddlePosition.y + 20)) ){
+        Ogre::Vector3 ballPosition = ball->getPosition();
+        if(ballPosition.x>90) {
+            ballPosition.x = 90;
+            velocity.x *= -1;
+			gameBall->setLinearVelocity(btVector3(-1*btVelocity[0],btVelocity[1],btVelocity[2]));
+            SoundManager::SoundControl.playClip(ballBounceWall, 0);
+        } else if(ballPosition.x<-90) {
+            ballPosition.x = -90;
+            velocity.x *= -1;
+			gameBall->setLinearVelocity(btVector3(-1*btVelocity[0],btVelocity[1],btVelocity[2]));
+            SoundManager::SoundControl.playClip(ballBounceWall, 0);
+        }
+        if(ballPosition.y>90) {
+            ballPosition.y=90;
+            velocity.y *= -1;
+			gameBall->setLinearVelocity(btVector3(btVelocity[0],-1*btVelocity[1],btVelocity[2]));
+            SoundManager::SoundControl.playClip(ballBounceWall, 0);
+        } else if(ballPosition.y<-90) {
+            ballPosition.y = -90;
+            velocity.y *= -1;
+			gameBall->setLinearVelocity(btVector3(btVelocity[0],-1*btVelocity[1],btVelocity[2]));
+            SoundManager::SoundControl.playClip(ballBounceWall, 0);
+        } 
+        if(ballPosition.z>290 && ballPosition.z<300) {
+            /*  if( (ballPosition.x <= paddlePosition.x && ballPosition.x >= (paddlePosition.x - 100)) && (ballPosition.y >= (paddlePosition.y - 20) && ballPosition.y <= (paddlePosition.y + 20)) ){
             ballPosition.z = 290;
             velocity.x += 100 * (-(paddlePosition.x - ballPosition.x)/100);
             velocity.y += 100 * (-(paddlePosition.y - ballPosition.y)/20);
             velocity.z *= -1;
             SoundManager::SoundControl.playClip(ballBouncePaddle, 0);
-        }*/
-	Ogre::SceneNode* paddleNode = mSceneMgr->getSceneNode("PaddleNode");
-	paddleNode->_update(false,false);
-	Ogre::AxisAlignedBox bounds = paddleNode->_getWorldAABB();
-	Ogre::Vector3 max = bounds.getMaximum();
-	Ogre::Vector3 min = bounds.getMinimum();
-	if(ballPosition.x-10 <= max.x && ballPosition.y-10 <= max.y && ballPosition.x+10 >= min.x && ballPosition.y+10 >= min.y)
-	{
-		ballPosition.z = 290;
-		velocity.x += 100 * (-(paddlePosition.x - ballPosition.x)/(bounds.getSize().x/2 + 10));
-		velocity.y += 100 * (-(paddlePosition.y - ballPosition.y)/(bounds.getSize().y/2 + 10));
-		velocity.z *= -1;
-		gameBall->setLinearVelocity(btVector3(btVelocity[0]+ (100 * (-(paddlePosition.x - ballPosition.x)/(bounds.getSize().x/2 + 10))),
-																					btVelocity[1]+ (100 * (-(paddlePosition.y - ballPosition.y)/(bounds.getSize().y/2 + 10))),-1*btVelocity[2]));
-		SoundManager::SoundControl.playClip(ballBouncePaddle, 0);
-	}
-    } else if(ballPosition.z<-290) {
-        ballPosition.z = -290;
-        velocity.z *= -1;
-				gameBall->setLinearVelocity(btVector3(btVelocity[0],btVelocity[1],-1*btVelocity[2]));
-        SoundManager::SoundControl.playClip(ballBounceWall, 0);
-    }
-    if(ballPosition.z>300){
-	inPlay=false;
-    }
+            }*/
+	        Ogre::SceneNode* paddleNode = mSceneMgr->getSceneNode("PaddleNode");
+	        paddleNode->_update(false,false);
+	        Ogre::AxisAlignedBox bounds = paddleNode->_getWorldAABB();
+	        Ogre::Vector3 max = bounds.getMaximum();
+	        Ogre::Vector3 min = bounds.getMinimum();
+	        if(ballPosition.x-10 <= max.x && ballPosition.y-10 <= max.y && ballPosition.x+10 >= min.x && ballPosition.y+10 >= min.y)
+	        {
+		        ballPosition.z = 290;
+		        velocity.x += 100 * (-(paddlePosition.x - ballPosition.x)/(bounds.getSize().x/2 + 10));
+		        velocity.y += 100 * (-(paddlePosition.y - ballPosition.y)/(bounds.getSize().y/2 + 10));
+		        velocity.z *= -1;
+		        gameBall->setLinearVelocity(btVector3(btVelocity[0]+ (100 * (-(paddlePosition.x - ballPosition.x)/(bounds.getSize().x/2 + 10))),
+			    btVelocity[1]+ (100 * (-(paddlePosition.y - ballPosition.y)/(bounds.getSize().y/2 + 10))),-1*btVelocity[2]));
+		        SoundManager::SoundControl.playClip(ballBouncePaddle, 0);
+	        }
+        } else if(ballPosition.z<-290) {
+            ballPosition.z = -290;
+            velocity.z *= -1;
+			gameBall->setLinearVelocity(btVector3(btVelocity[0],btVelocity[1],-1*btVelocity[2]));
+            SoundManager::SoundControl.playClip(ballBounceWall, 0);
+        }
+        if(ballPosition.z>300)
+	       inPlay=false;
     		
-    ball->setPosition(ballPosition);
-    //ball->translate(evt.timeSinceLastFrame*velocity);
+        ball->setPosition(ballPosition);
+        //ball->translate(evt.timeSinceLastFrame*velocity);
 
-		t.setOrigin(btVector3(ballPosition.x,ballPosition.y,ballPosition.z));
-	  gameBall->getMotionState()->setWorldTransform(t);
+	   t.setOrigin(btVector3(ballPosition.x,ballPosition.y,ballPosition.z));
+	   gameBall->getMotionState()->setWorldTransform(t);
 		
 
-	if(hasPowerUp)				///Powerup Collisions (if no bullet)
-	{
-		Ogre::SceneNode* powerupNode = mSceneMgr->getSceneNode("PowerUpNode");
-		powerupNode->_update(false,false);
-		Ogre::AxisAlignedBox bounds =powerupNode->_getWorldAABB();
-		Ogre::Vector3 max = bounds.getMaximum();
-		Ogre::Vector3 min = bounds.getMinimum();
-		if(ballPosition.x <= max.x && ballPosition.y <= max.y && ballPosition.z <= max.z && ballPosition.x >= min.x && ballPosition.y >= min.y && ballPosition.z >= min.z)
-		{
-			hasPowerUp=false;
-			if(effect<=1)
-			{
-				score+=100;
-				velocity += Ogre::Vector3((velocity.x/Ogre::Math::Abs(velocity.x))*100.f,(velocity.y/Ogre::Math::Abs(velocity.y))*100.f,(velocity.z/Ogre::Math::Abs(velocity.z))*100.f); 
-        gameBall->setLinearVelocity(btVector3((velocity.x/Ogre::Math::Abs(velocity.x))*100.f,(velocity.y/Ogre::Math::Abs(velocity.y))*100.f,(velocity.z/Ogre::Math::Abs(velocity.z))*100.f));
-			}
-			if(effect>=2)
-			{
-				score+=100;
-				velocity /= 1.5;
-				gameBall->setLinearVelocity(btVector3(btVelocity[0]/1.5,btVelocity[1]/1.5,-1*btVelocity[2]/1.5));
-			}	
-			mSceneMgr->destroySceneNode("PowerUpNode");	
-		}
-	}
-    ball->pitch( Ogre::Degree( evt.timeSinceLastFrame*velocity.x ) );
-    ball->yaw( Ogre::Degree( evt.timeSinceLastFrame*velocity.y ) );
-    ball->roll( Ogre::Degree( evt.timeSinceLastFrame*velocity.z ) );
-    generatePowerup();
+	   if(hasPowerUp)				///Powerup Collisions (if no bullet)
+	   {
+		    Ogre::SceneNode* powerupNode = mSceneMgr->getSceneNode("PowerUpNode");
+		    powerupNode->_update(false,false);
+		    Ogre::AxisAlignedBox bounds =powerupNode->_getWorldAABB();
+		    Ogre::Vector3 max = bounds.getMaximum();
+		    Ogre::Vector3 min = bounds.getMinimum();
+		    if(ballPosition.x <= max.x && ballPosition.y <= max.y && ballPosition.z <= max.z && ballPosition.x >= min.x && ballPosition.y >= min.y && ballPosition.z >= min.z)
+		    {
+			    hasPowerUp=false;
+			    if(effect<=1)
+			    {
+				    score+=100;
+				    velocity += Ogre::Vector3((velocity.x/Ogre::Math::Abs(velocity.x))*100.f,(velocity.y/Ogre::Math::Abs(velocity.y))*100.f,(velocity.z/Ogre::Math::Abs(velocity.z))*100.f); 
+                    gameBall->setLinearVelocity(btVector3((velocity.x/Ogre::Math::Abs(velocity.x))*100.f,(velocity.y/Ogre::Math::Abs(velocity.y))*100.f,(velocity.z/Ogre::Math::Abs(velocity.z))*100.f));
+			    }
+		      	if(effect>=2)
+		      	{
+				    score+=100;
+				    velocity /= 1.5;
+				    gameBall->setLinearVelocity(btVector3(btVelocity[0]/1.5,btVelocity[1]/1.5,-1*btVelocity[2]/1.5));
+			    }	
+			    mSceneMgr->destroySceneNode("PowerUpNode");	
+		    }
+	    }
+        ball->pitch( Ogre::Degree( evt.timeSinceLastFrame*velocity.x ) );
+        ball->yaw( Ogre::Degree( evt.timeSinceLastFrame*velocity.y ) );
+        ball->roll( Ogre::Degree( evt.timeSinceLastFrame*velocity.z ) );
+        generatePowerup();
 
-	//velocity += Ogre::Vector3((velocity.x/Ogre::Math::Abs(velocity.x))*.1f,(velocity.y/Ogre::Math::Abs(velocity.y))*.1f,(velocity.z/Ogre::Math::Abs(velocity.z))*.1f); 
+	   //velocity += Ogre::Vector3((velocity.x/Ogre::Math::Abs(velocity.x))*.1f,(velocity.y/Ogre::Math::Abs(velocity.y))*.1f,(velocity.z/Ogre::Math::Abs(velocity.z))*.1f);
+    } 
     return true;
 }
 //-------------------------------------------------------------------------------------
@@ -629,10 +641,10 @@ bool WallBall::keyPressed( const OIS::KeyEvent &arg )
 {
     if (mTrayMgr->isDialogVisible()) return true;   // don't process any more keys if dialog is up
  
-    if (arg.key == OIS::KC_F)   // toggle visibility of advanced frame stats
-    {
-        mTrayMgr->toggleAdvancedFrameStats();
-    }
+    //if (arg.key == OIS::KC_F)   // toggle visibility of advanced frame stats
+    //{
+    //    mTrayMgr->toggleAdvancedFrameStats();
+    //}
     
     else if (arg.key == OIS::KC_T)   // cycle texture filtering mode
     {
@@ -734,10 +746,8 @@ bool WallBall::keyReleased( const OIS::KeyEvent &arg )
  
 bool WallBall::mouseMoved( const OIS::MouseEvent &arg )
 {
-    //if (mTrayMgr->injectMouseMove(arg)) return true;
+    if (mTrayMgr->injectMouseMove(arg)) return true;
     //mCameraMan->injectMouseMove(arg);
-
- //   Ogre::SceneNode* p = mSceneMgr->getSceneNode("PaddleNode");
     
     
     Ogre::SceneNode* paddleNode = mSceneMgr->getSceneNode("PaddleNode");
@@ -763,7 +773,16 @@ bool WallBall::mouseMoved( const OIS::MouseEvent &arg )
  
 bool WallBall::mousePressed( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
 {
-    if (mTrayMgr->injectMouseDown(arg, id)) return true;
+    if (mTrayMgr->injectMouseDown(arg, id))
+    {
+        OgreBites::Button* pressedButton;
+        mTrayMgr->buttonHit(pressedButton);
+        if (pressedButton->getName().compare("Singleplayer") == 0)
+            singleplayer = true; 
+        if (pressedButton->getName().compare("Multiplayer") == 0)
+            multiplayer = true;
+        return true;
+    }
     mCameraMan->injectMouseDown(arg, id);
     return true;
 }
