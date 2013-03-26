@@ -38,6 +38,8 @@ This source file is part of the
 #include "Simulator.h"
 #include "SoundManager.h"
 
+#include "SDL_net.h"
+
 #include <time.h>
 #include <btBulletDynamicsCommon.h>
  
@@ -84,6 +86,10 @@ protected:
     //SDK Trays
     bool singleplayer;
     bool multiplayer;
+
+    //Networking with SDL_net
+    void NetworkHost(void);
+    void NetworkClient(void);
  
     // Ogre::FrameListener
     virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);

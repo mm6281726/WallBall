@@ -772,6 +772,21 @@ void WallBall::windowClosed(Ogre::RenderWindow* rw)
     }
 }
 
+void NetworkHost(void)      //http://content.gpwiki.org/index.php/SDL:Tutorial:Using_SDL_net <- good code here, adapt messages accordingly
+{                           //http://jcatki.no-ip.org:8080/SDL_net/SDL_net.html <- good documentation here
+    TCPsocket sd, csd;      /* Socket descriptor, Client socket descriptor */
+    IPaddress ip, *remoteIP;
+    int quit, quit2;
+    char buffer[512];
+}
+
+void NetworkClient(void)    //http://content.gpwiki.org/index.php/SDL:Tutorial:Using_SDL_net <- good code here, adapt messages accordingly
+{                           //http://jcatki.no-ip.org:8080/SDL_net/SDL_net.html <- good documentation here
+    IPaddress ip;           /* Server address */
+    TCPsocket sd;           /* Socket descriptor */
+    int quit, len;
+    char buffer[512];
+}
 
 void WallBall::generatePowerup(void)
 {
