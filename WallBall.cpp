@@ -35,7 +35,6 @@ WallBall::WallBall(void)
     mPluginsCfg(Ogre::StringUtil::BLANK),
     mTrayMgr(0),
     mCameraMan(0),
-    mDetailsPanel(0),
     mCursorWasVisible(false),
     mShutDown(false),
     mInputManager(0),
@@ -71,7 +70,7 @@ btRigidBody* addPlane(float x,float y,float z,btVector3 normal)
 	btMotionState* motion=new btDefaultMotionState(t);
 	btRigidBody::btRigidBodyConstructionInfo info(0.0,motion,plane);
 	btRigidBody* body=new btRigidBody(info);
-  body->setRestitution(1.0);
+    body->setRestitution(1.0);
 	world->addRigidBody(body);
 	bodies.push_back(body);
 	return body;
@@ -424,36 +423,8 @@ bool WallBall::go(void)
     Ogre::WindowEventUtilities::addWindowEventListener(mWindow, this);
  
     mTrayMgr = new OgreBites::SdkTrayManager("InterfaceName", mWindow, mMouse, this);
-    
- 
-    // create a params panel for displaying sample details
-    Ogre::StringVector items;
-    //items.push_back("Score: ");
-    
-    items.push_back("Score");
-    items.push_back("");//cam.pY");
-    items.push_back("");//cam.pZ");
-    items.push_back("");//");
-    items.push_back("");
-    items.push_back("");
-    items.push_back("Power Up");
-    items.push_back("");
-    items.push_back("");
-    items.push_back("Filtering");
-    items.push_back("Poly Mode");
-    
- 
-    mDetailsPanel = mTrayMgr->createParamsPanel(OgreBites::TL_NONE, "DetailsPanel", 200, items);
-    mDetailsPanel->setParamValue(9, "Bilinear");
-    mDetailsPanel->setParamValue(10, "Solid");
-
-    mTrayMgr->showCursor();
-    mTrayMgr->showBackdrop("Examples/Chrome");
-    mDetailsPanel->hide();
-
-    Ogre::FontManager::getSingleton().getByName("SdkTrays/Caption")->load();
-    OgreBites::Button* singleplayer = mTrayMgr->createButton(OgreBites::TL_CENTER, "Singleplayer", "Singleplayer", 250);
-    OgreBites::Button* multiplayer = mTrayMgr->createButton(OgreBites::TL_CENTER, "Multiplayer", "Multiplayer", 250);
+    GUIManager::GUIControl.setup(mTrayMgr);
+    GUIManager::GUIControl.begin_mainScreen();
  
     mRoot->addFrameListener(this);
 //-------------------------------------------------------------------------------------
@@ -475,38 +446,18 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
     mKeyboard->capture();
     mMouse->capture();
     
-    mTrayMgr->frameRenderingQueued(evt);
-    mTrayMgr->adjustTrays(); 
+    GUIManager::GUIControl.frameRenderingQueued(evt); 
 
     if(!singleplayer && !multiplayer){
-        mTrayMgr->showCursor();
-        mTrayMgr->showBackdrop("Examples/Chrome");
-        mDetailsPanel->hide();
-        
+        GUIManager::GUIControl.begin_mainScreen();
     }
     else {
-        if (!mTrayMgr->isDialogVisible())
+        if (!GUIManager::GUIControl.isDialogVisible())
         {
             mCameraMan->frameRenderingQueued(evt);   // if dialog isn't up, then update the camera
-            if (mDetailsPanel->isVisible())   // if details panel is visible, then update its contents
+            if (GUIManager::GUIControl.isScoreboardVisible())   // if details panel is visible, then update its contents
             {
-	        if(inPlay){
-            	mDetailsPanel->setParamValue(0, Ogre::StringConverter::toString((timer.getMilliseconds()/100)+score));
-		        mDetailsPanel->setParamValue(1, "");
-		    }else
-                mDetailsPanel->setParamValue(1, "GAME OVER");
-
-            mDetailsPanel->setParamValue(2, "Bounce the ball for");
-            mDetailsPanel->setParamValue(3, "as long as possible");
-            mDetailsPanel->setParamValue(4, "to win!");
-            mDetailsPanel->setParamValue(6, "");
-
-	       if(effect<=1)
-            	mDetailsPanel->setParamValue(6, "Accelerate");
-	        else if(effect>=2)
-           	    mDetailsPanel->setParamValue(6, "Slow");
-
-	        mDetailsPanel->setParamValue(7, "Press Enter to Restart");
+                GUIManager::GUIControl.inPlay(inPlay, effect, timer, score);
             }
         }
     
@@ -641,12 +592,7 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
 //-------------------------------------------------------------------------------------
 bool WallBall::keyPressed( const OIS::KeyEvent &arg )
 {
-    if (mTrayMgr->isDialogVisible()) return true;   // don't process any more keys if dialog is up
- 
-    //if (arg.key == OIS::KC_F)   // toggle visibility of advanced frame stats
-    //{
-    //    mTrayMgr->toggleAdvancedFrameStats();
-    //}
+    if (GUIManager::GUIControl.isDialogVisible()) return true;   // don't process any more keys if dialog is up
     
     else if (arg.key == OIS::KC_T)   // cycle texture filtering mode
     {
@@ -654,7 +600,7 @@ bool WallBall::keyPressed( const OIS::KeyEvent &arg )
         Ogre::TextureFilterOptions tfo;
         unsigned int aniso;
  
-        switch (mDetailsPanel->getParamValue(9).asUTF8()[0])
+        switch (GUIManager::GUIControl.getScoreboardParam(9).asUTF8()[0])
         {
         case 'B':
             newVal = "Trilinear";
@@ -679,7 +625,7 @@ bool WallBall::keyPressed( const OIS::KeyEvent &arg )
  
         Ogre::MaterialManager::getSingleton().setDefaultTextureFiltering(tfo);
         Ogre::MaterialManager::getSingleton().setDefaultAnisotropy(aniso);
-        mDetailsPanel->setParamValue(9, newVal);
+        GUIManager::GUIControl.setScoreboardParam(9, newVal);
     }
     else if (arg.key == OIS::KC_R)   // cycle polygon rendering mode
     {
@@ -702,7 +648,7 @@ bool WallBall::keyPressed( const OIS::KeyEvent &arg )
         }
  
         mCamera->setPolygonMode(pm);
-        mDetailsPanel->setParamValue(10, newVal);
+        GUIManager::GUIControl.setScoreboardParam(10, newVal);
     }
     else if(arg.key == OIS::KC_F5)   // refresh all textures
     {
@@ -771,21 +717,21 @@ bool WallBall::mouseMoved( const OIS::MouseEvent &arg )
     mSceneMgr->getCamera("PlayerCam")->lookAt(position/2);
     return true;
 }
+
+void WallBall::buttonHit(OgreBites::Button* button){
+    if (button->getName().compare("Singleplayer") == 0)
+        singleplayer = true;
+    else if (button->getName().compare("Multiplayer") == 0)
+        multiplayer = true;
+    else if (button->getName().compare("Exit") == 0)
+        mShutDown = true;
+
+    GUIManager::GUIControl.end_mainScreen();
+}
  
 bool WallBall::mousePressed( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
 {
-    if (mTrayMgr->injectMouseDown(arg, id))
-    {
-        OgreBites::Button* pressedButton;
-        mTrayMgr->buttonHit(pressedButton);
-        //if (pressedButton->getName().compare("Singleplayer") == 0)
-            singleplayer = true; 
-        //if (pressedButton->getName().compare("Multiplayer") == 0)
-            multiplayer = true;
-        mTrayMgr->hideAll();
-        mDetailsPanel->show();
-        return true;
-    }
+    if (mTrayMgr->injectMouseDown(arg, id)) return true;
     mCameraMan->injectMouseDown(arg, id);
     return true;
 }
