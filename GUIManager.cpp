@@ -4,7 +4,10 @@
 
 GUIManager GUIManager::GUIControl;
 
-    GUIManager::GUIManager() {}
+    GUIManager::GUIManager() :
+    main(true),
+    mPause(true)
+    {}
 
     GUIManager::~GUIManager() {
         mTrayMgr->destroyAllWidgets();
@@ -27,49 +30,74 @@ GUIManager GUIManager::GUIControl;
         mScoreBoard = mTrayMgr->createParamsPanel(OgreBites::TL_NONE, "ScoreBoard", 200, items);
         mScoreBoard->setParamValue(9, "Bilinear");
         mScoreBoard->setParamValue(10, "Solid");
-        mScoreBoard->hide();
     }
 
     void GUIManager::createMainScreen(){
+        mTrayMgr->createLabel(OgreBites::TL_CENTER, "MainScreen", "Main Menu");
         mTrayMgr->createButton(OgreBites::TL_CENTER, "Singleplayer", "Singleplayer", 250);
         mTrayMgr->createButton(OgreBites::TL_CENTER, "Multiplayer", "Multiplayer", 250);
         mTrayMgr->createButton(OgreBites::TL_CENTER, "Exit", "Exit", 250);
+        mTrayMgr->showCursor();
+        mTrayMgr->showBackdrop("Examples/Chrome");
+    }
+
+    void GUIManager::removeMainScreen(){
+        mTrayMgr->destroyWidget("MainScreen");
+        mTrayMgr->destroyWidget("Singleplayer");
+        mTrayMgr->destroyWidget("Multiplayer");
+        mTrayMgr->destroyWidget("Exit");
+        mTrayMgr->hideCursor();
+        mTrayMgr->hideBackdrop();
     }
 
     void GUIManager::createPauseScreen(){
-        OgreBites::Button* resume = mTrayMgr->createButton(OgreBites::TL_CENTER, "Resume", "Resume", 250);
-        OgreBites::Button* main = mTrayMgr->createButton(OgreBites::TL_CENTER, "MainMenu", "Main Menu", 250);
-        OgreBites::Button* quit = mTrayMgr->createButton(OgreBites::TL_CENTER, "PauseExit", "Exit", 250);
-        //resume->hide();
-        //main->hide();
-        //quit->hide();
+        mTrayMgr->createLabel(OgreBites::TL_CENTER, "PauseScreen", "Pause");
+        mTrayMgr->createButton(OgreBites::TL_CENTER, "Resume", "Resume", 250);
+        mTrayMgr->createButton(OgreBites::TL_CENTER, "MainMenu", "Main Menu", 250);
+        mTrayMgr->createButton(OgreBites::TL_CENTER, "PauseExit", "Exit", 250);
+    }
+
+    void GUIManager::removePauseScreen(){
+        mTrayMgr->destroyWidget("PauseScreen");
+        mTrayMgr->destroyWidget("Resume");
+        mTrayMgr->destroyWidget("MainMenu");
+        mTrayMgr->destroyWidget("PauseExit");
     }
 
     void GUIManager::setup(OgreBites::SdkTrayManager* trayMgr){
 	    mTrayMgr = trayMgr;
 
-        createScoreBoard();
         createMainScreen();
-        createPauseScreen();
+        createScoreBoard();
+        mScoreBoard->hide();
 
         Ogre::FontManager::getSingleton().getByName("SdkTrays/Caption")->load();
 
     }
 
     void GUIManager::begin_mainScreen(){
-        //Set up Main Menu   
-	    mTrayMgr->showCursor();
-        mTrayMgr->showBackdrop("Examples/Chrome");
-        mTrayMgr->getWidget("Singleplayer")->show();
-        mTrayMgr->getWidget("Multiplayer")->show();
-        mTrayMgr->getWidget("Exit")->show();
+        if(!main)
+            mScoreBoard->hide();
+        main = true;
+        createMainScreen();
     }
 
     void GUIManager::end_mainScreen(){
-        mTrayMgr->getWidget("Singleplayer")->hide();
-        mTrayMgr->getWidget("Multiplayer")->hide();
-        mTrayMgr->getWidget("Exit")->hide();
+        main = false;
+        removeMainScreen();
         mScoreBoard->show();
+    }
+
+    void GUIManager::pause(){
+        if(mPause){
+            mTrayMgr->showCursor();
+            createPauseScreen();
+            mPause = false;
+        }else{
+            mTrayMgr->hideCursor();
+            removePauseScreen();
+            mPause = true;
+        }
     }
 
     void GUIManager::inPlay(bool inPlay, int effect, Ogre::Timer timer, int score){

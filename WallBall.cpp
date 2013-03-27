@@ -424,7 +424,6 @@ bool WallBall::go(void)
  
     mTrayMgr = new OgreBites::SdkTrayManager("InterfaceName", mWindow, mMouse, this);
     GUIManager::GUIControl.setup(mTrayMgr);
-    GUIManager::GUIControl.begin_mainScreen();
  
     mRoot->addFrameListener(this);
 //-------------------------------------------------------------------------------------
@@ -448,10 +447,7 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
     
     GUIManager::GUIControl.frameRenderingQueued(evt); 
 
-    if(!singleplayer && !multiplayer){
-        GUIManager::GUIControl.begin_mainScreen();
-    }
-    else {
+    if(singleplayer || multiplayer){
         if (!GUIManager::GUIControl.isDialogVisible())
         {
             mCameraMan->frameRenderingQueued(evt);   // if dialog isn't up, then update the camera
@@ -560,8 +556,8 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
 		    Ogre::SceneNode* powerupNode = mSceneMgr->getSceneNode("PowerUpNode");
 		    powerupNode->_update(false,false);
 		    Ogre::AxisAlignedBox bounds =powerupNode->_getWorldAABB();
-		    Ogre::Vector3 max = bounds.getMaximum();
-		    Ogre::Vector3 min = bounds.getMinimum();
+		    Ogre::Vector3 max = bounds.getMaximum() - 100;
+		    Ogre::Vector3 min = bounds.getMinimum() + 100;
 		    if(ballPosition.x <= max.x && ballPosition.y <= max.y && ballPosition.z <= max.z && ballPosition.x >= min.x && ballPosition.y >= min.y && ballPosition.z >= min.z)
 		    {
 			    hasPowerUp=false;
@@ -660,7 +656,7 @@ bool WallBall::keyPressed( const OIS::KeyEvent &arg )
     }
     else if (arg.key == OIS::KC_ESCAPE)
     {
-        mShutDown = true;
+        GUIManager::GUIControl.pause();
     }
 
     else if (arg.key == OIS::KC_RETURN)
@@ -719,14 +715,22 @@ bool WallBall::mouseMoved( const OIS::MouseEvent &arg )
 }
 
 void WallBall::buttonHit(OgreBites::Button* button){
-    if (button->getName().compare("Singleplayer") == 0)
+    if (button->getName().compare("Singleplayer") == 0){
         singleplayer = true;
-    else if (button->getName().compare("Multiplayer") == 0)
+        GUIManager::GUIControl.end_mainScreen();
+    }
+    else if (button->getName().compare("Multiplayer") == 0){
         multiplayer = true;
-    else if (button->getName().compare("Exit") == 0)
+        GUIManager::GUIControl.end_mainScreen();
+    }
+    else if (button->getName().compare("Exit") == 0 || button->getName().compare("PauseExit") == 0)
         mShutDown = true;
-
-    GUIManager::GUIControl.end_mainScreen();
+    else if(button->getName().compare("Resume") == 0)
+        GUIManager::GUIControl.pause();
+    else if(button->getName().compare("MainMenu") == 0){
+        GUIManager::GUIControl.pause();
+        GUIManager::GUIControl.begin_mainScreen();
+    }
 }
  
 bool WallBall::mousePressed( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
