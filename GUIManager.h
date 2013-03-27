@@ -15,14 +15,18 @@ class GUIManager{
         void createScoreBoard();
         void createMainScreen();
         void removeMainScreen();
+        void createMultiplayerScreen();
+        void removeMultiplayerScreen();
         void createPauseScreen();
         void removePauseScreen();
     public:
         GUIManager();
         ~GUIManager();
         void setup(OgreBites::SdkTrayManager* trayMgr);
-        void begin_mainScreen();
-        void end_mainScreen();
+        void begin_MainScreen();
+        void end_MainScreen();
+        void begin_MultiplayerScreen();
+        void end_MultiplayerScreen();
         void pause();
         void inPlay(bool inPlay, int effect, Ogre::Timer timer, int score);
         bool isScoreboardVisible();

@@ -50,6 +50,24 @@ GUIManager GUIManager::GUIControl;
         mTrayMgr->hideBackdrop();
     }
 
+    void GUIManager::createMultiplayerScreen(){
+        mTrayMgr->createLabel(OgreBites::TL_CENTER, "MultiScreen", "Multiplayer");
+        mTrayMgr->createButton(OgreBites::TL_CENTER, "Host", "Host", 250);
+        mTrayMgr->createButton(OgreBites::TL_CENTER, "Client", "Client", 250);
+        mTrayMgr->createButton(OgreBites::TL_CENTER, "Back", "Back", 250);
+        mTrayMgr->showCursor();
+        mTrayMgr->showBackdrop("Examples/BeachStones");
+    }
+
+    void GUIManager::removeMultiplayerScreen(){
+        mTrayMgr->destroyWidget("MultiScreen");
+        mTrayMgr->destroyWidget("Host");
+        mTrayMgr->destroyWidget("Client");
+        mTrayMgr->destroyWidget("Back");
+        mTrayMgr->hideCursor();
+        mTrayMgr->hideBackdrop();
+    }
+
     void GUIManager::createPauseScreen(){
         mTrayMgr->createLabel(OgreBites::TL_CENTER, "PauseScreen", "Pause");
         mTrayMgr->createButton(OgreBites::TL_CENTER, "Resume", "Resume", 250);
@@ -75,16 +93,26 @@ GUIManager GUIManager::GUIControl;
 
     }
 
-    void GUIManager::begin_mainScreen(){
+    void GUIManager::begin_MainScreen(){
         if(!main)
             mScoreBoard->hide();
         main = true;
         createMainScreen();
     }
 
-    void GUIManager::end_mainScreen(){
+    void GUIManager::end_MainScreen(){
         main = false;
         removeMainScreen();
+        mScoreBoard->show();
+    }
+
+    void GUIManager::begin_MultiplayerScreen(){
+        mScoreBoard->hide();
+        createMultiplayerScreen();
+    }
+    
+    void GUIManager::end_MultiplayerScreen(){
+        removeMultiplayerScreen();
         mScoreBoard->show();
     }
 

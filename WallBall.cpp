@@ -717,11 +717,12 @@ bool WallBall::mouseMoved( const OIS::MouseEvent &arg )
 void WallBall::buttonHit(OgreBites::Button* button){
     if (button->getName().compare("Singleplayer") == 0){
         singleplayer = true;
-        GUIManager::GUIControl.end_mainScreen();
+        GUIManager::GUIControl.end_MainScreen();
     }
     else if (button->getName().compare("Multiplayer") == 0){
         multiplayer = true;
-        GUIManager::GUIControl.end_mainScreen();
+        GUIManager::GUIControl.end_MainScreen();
+        GUIManager::GUIControl.begin_MultiplayerScreen();
     }
     else if (button->getName().compare("Exit") == 0 || button->getName().compare("PauseExit") == 0)
         mShutDown = true;
@@ -729,8 +730,16 @@ void WallBall::buttonHit(OgreBites::Button* button){
         GUIManager::GUIControl.pause();
     else if(button->getName().compare("MainMenu") == 0){
         GUIManager::GUIControl.pause();
-        GUIManager::GUIControl.begin_mainScreen();
+        GUIManager::GUIControl.begin_MainScreen();
     }
+    else if(button->getName().compare("Back") == 0){
+        GUIManager::GUIControl.end_MultiplayerScreen();
+        GUIManager::GUIControl.begin_MainScreen();
+    }
+    else if(button->getName().compare("Host") == 0)
+        GUIManager::GUIControl.end_MultiplayerScreen();
+    else if(button->getName().compare("Client") == 0)
+        GUIManager::GUIControl.end_MultiplayerScreen();
 }
  
 bool WallBall::mousePressed( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
