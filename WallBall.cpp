@@ -573,13 +573,15 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
 				    velocity /= 1.5;
 				    gameBall->setLinearVelocity(btVector3(btVelocity[0]/1.5,btVelocity[1]/1.5,-1*btVelocity[2]/1.5));
 			    }	
-			    mSceneMgr->destroySceneNode("PowerUpNode");	
+			    PowerupManager::PowerupControl.destroyPowerup();	
 		    }
 	    }
         ball->pitch( Ogre::Degree( evt.timeSinceLastFrame*velocity.x ) );
         ball->yaw( Ogre::Degree( evt.timeSinceLastFrame*velocity.y ) );
         ball->roll( Ogre::Degree( evt.timeSinceLastFrame*velocity.z ) );
-        generatePowerup();
+        if(!hasPowerUp)
+            PowerupManager::PowerupControl.generatePowerup();
+        hasPowerUp=true;
 
 	   //velocity += Ogre::Vector3((velocity.x/Ogre::Math::Abs(velocity.x))*.1f,(velocity.y/Ogre::Math::Abs(velocity.y))*.1f,(velocity.z/Ogre::Math::Abs(velocity.z))*.1f);
     } 
@@ -672,7 +674,7 @@ bool WallBall::keyPressed( const OIS::KeyEvent &arg )
     	timer.reset();
     	effect=0;
     	hasPowerUp=false;
-    	mSceneMgr->destroySceneNode("PowerUpNode");
+    	PowerupManager::PowerupControl.destroyPowerup();
     	score=0;
     	inPlay = true;
         velocity.z *= -1;
@@ -877,42 +879,6 @@ void NetworkClient(void)    //http://content.gpwiki.org/index.php/SDL:Tutorial:U
     int quit, len;
     char buffer[512];
 }
-
-void WallBall::generatePowerup(void)
-{
-	if(/*Ogre::Math::RangeRandom(0,5000) > 10 ||*/ hasPowerUp)
-		return;
-	//PowerUp spawned = PowerUp::PowerUp(Ogre::Math::RangeRandom(1,4));
-	effect = Ogre::Math::RangeRandom(0,3);
-	Ogre::Entity* power;
-	if(effect <= 1)
-	{
-		power = mSceneMgr->getEntity("PowerUpSphere");
-	}
-	if(effect >= 2)
-	{
-		power = mSceneMgr->getEntity("PowerUpSphere");
-	}
-	Ogre::SceneNode* powerupNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("PowerUpNode");
-	powerupNode->scale(0.4f,0.4f,0.4f);
-	float Powx = Ogre::Math::RangeRandom(0,200)-100;
-	float Powy = Ogre::Math::RangeRandom(0,200)-100;
-	float Powz = Ogre::Math::RangeRandom(0,600)-300;
-	powerupNode->translate(Ogre::Vector3(Powx,Powy,Powz));
-	powerupNode->attachObject(power);
-	powerupNode->_update(false,false);
-	hasPowerUp=true;
-/*	if(effect == 3)
-	{
-		power = mSceneMgr->createEntity("PowerUp", "sphere.mesh");
-	}
-	if(effect == 4)
-	{
-		power = mSceneMgr->createEntity("PowerUp", "sphere.mesh");
-	}*/
-	
-}
- 
  
  
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32

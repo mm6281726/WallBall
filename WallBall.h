@@ -37,6 +37,7 @@ This source file is part of the
 
 #include "Simulator.h"
 #include "SoundManager.h"
+#include "PowerupManager.h"
 
 #include "SDL_net.h"
 
