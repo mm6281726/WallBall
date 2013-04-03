@@ -37,9 +37,11 @@ This source file is part of the
 
 #include "Simulator.h"
 #include "SoundManager.h"
-#include "PowerupManager.h"
+#include "NetworkManager.h"
 
 #include "SDL_net.h"
+#include <sstream>
+#include <string>
 
 #include <time.h>
 #include <btBulletDynamicsCommon.h>
@@ -50,6 +52,8 @@ public:
     WallBall(void);
     virtual ~WallBall(void);
     bool go(void);
+		//PaddleManager clientPaddle, serverPaddle;
+		//BallManager sharedBall;
 protected:
     Ogre::Root *mRoot;
     Ogre::Camera* mCamera;
@@ -87,10 +91,15 @@ protected:
     //SDK Trays
     bool singleplayer;
     bool multiplayer;
+		bool isHost;
+		bool isClient;
 
     //Networking with SDL_net
     void NetworkHost(void);
     void NetworkClient(void);
+    char* Vector3ToString(Ogre::Vector3 vic);
+    Ogre::Vector3 StringToVector3(char* str);
+		bool connected;
  
     // Ogre::FrameListener
     virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);
@@ -108,6 +117,9 @@ protected:
     // Ogre::WindowEventListener
     virtual void windowResized(Ogre::RenderWindow* rw);
     virtual void windowClosed(Ogre::RenderWindow* rw);
+
+		void setupFrontWall(void);
+		void setupOpponentPaddle(void);
 };
  
 #endif // #ifndef __WallBall_h_

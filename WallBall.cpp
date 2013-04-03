@@ -24,7 +24,12 @@ btBroadphaseInterface* broadphase;	//should Bullet examine every object, or just
 btConstraintSolver* solver;					//solve collisions, apply forces, impulses
 std::vector<btRigidBody*> bodies; 
 btRigidBody* gameBall;
- 
+char* hostname = "marathon-bar";				//////////////////	CHANGE THIS TO THE HOST NAME OF THE COMPUTER YOU WANT TO CONNECT TO 
+bool connected = true;
+PaddleManager clientPaddle = PaddleManager();
+PaddleManager serverPaddle = PaddleManager();
+BallManager sharedBall= BallManager();
+
 //-------------------------------------------------------------------------------------
 WallBall::WallBall(void)
     : mRoot(0),
@@ -41,7 +46,9 @@ WallBall::WallBall(void)
     mMouse(0),
     mKeyboard(0),
     singleplayer(false),
-    multiplayer(false)
+    multiplayer(false),
+		isHost(false),
+		isClient(false)
 {}
 //-------------------------------------------------------------------------------------
 WallBall::~WallBall(void)
@@ -70,7 +77,7 @@ btRigidBody* addPlane(float x,float y,float z,btVector3 normal)
 	btMotionState* motion=new btDefaultMotionState(t);
 	btRigidBody::btRigidBodyConstructionInfo info(0.0,motion,plane);
 	btRigidBody* body=new btRigidBody(info);
-    body->setRestitution(1.0);
+    	body->setRestitution(1.0);
 	world->addRigidBody(body);
 	bodies.push_back(body);
 	return body;
@@ -108,12 +115,44 @@ void initPhysics(void)
 
 	addPlane(-100,0,0,btVector3(1,0,0));
 	addPlane(100,0,0,btVector3(-1,0,0));
-    addPlane(0,-100,0,btVector3(0,1,0));
+  addPlane(0,-100,0,btVector3(0,1,0));
 	addPlane(0,100,0,btVector3(0,-1,0));
-	addPlane(0,0,-300,btVector3(0,0,1));
+	//addPlane(0,0,-300,btVector3(0,0,1));
 	//addPlane(0,0,300,btVector3(0,0,-1));
 
 	gameBall = addSphere(10,0,0,0,5);
+}
+
+void WallBall::setupFrontWall(void)
+{
+	Ogre::Plane frontWallFront(Ogre::Vector3::UNIT_Z, -300);
+ 	Ogre::Plane frontWallBack(Ogre::Vector3::NEGATIVE_UNIT_Z, 300);
+
+  Ogre::MeshManager::getSingleton().createPlane("frontWallFront", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+  frontWallFront, 200, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_X);
+  Ogre::MeshManager::getSingleton().createPlane("frontWallBack", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+  frontWallBack, 200, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_X); 
+	
+	Ogre::Entity* entFrontWallFront = mSceneMgr->createEntity("FrontWallFront", "frontWallFront");
+  mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(entFrontWallFront);
+  entFrontWallFront->setMaterialName("Examples/Rockwall");
+  entFrontWallFront->setCastShadows(false);
+
+  Ogre::Entity* entFrontWallBack = mSceneMgr->createEntity("FrontWallBack", "frontWallBack");
+  mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(entFrontWallBack);
+  entFrontWallBack->setMaterialName("Examples/Rockwall");
+	entFrontWallBack->setCastShadows(false);
+}
+
+void WallBall::setupOpponentPaddle(void)
+{
+  Ogre::Entity* paddle2 = mSceneMgr->createEntity("Paddle2", "cube.mesh");
+  Ogre::SceneNode* paddleNode2 = mSceneMgr->getRootSceneNode()->createChildSceneNode("PaddleNode2");
+  paddleNode2->attachObject(paddle2);
+  paddleNode2->scale(.50,.50,.50);
+  paddleNode2->scale(1.5,.8,.2);
+  paddleNode2->setPosition(0, -50, -300);
+
 }
 
 bool WallBall::go(void)
@@ -131,6 +170,10 @@ bool WallBall::go(void)
     // construct Ogre::Root
     mRoot = new Ogre::Root(mPluginsCfg);
  
+//	NetworkManager::NetworkControl.NetworkHost();
+//	NetworkManager::NetworkControl.NetworkClient("");
+//	NetworkManager::NetworkControl.NetworkCommunicator();
+
 //-------------------------------------------------------------------------------------
     // setup resources
     // Load resource paths from config file
@@ -212,15 +255,14 @@ bool WallBall::go(void)
     ballNode->attachObject(ball);
     ballNode->scale(.1,.1,.1);
     mCamera->setPolygonMode(Ogre::PM_WIREFRAME);
+
     Ogre::Entity* paddle = mSceneMgr->createEntity("Paddle", "cube.mesh");
     Ogre::SceneNode* paddleNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("PaddleNode");
     paddleNode->attachObject(paddle);
     paddleNode->scale(.50,.50,.50);
     paddleNode->scale(1.5,.8,.2);
-  //  paddleNode->roll(Ogre::Degree(90));
     paddleNode->setPosition(0, -50, 300);
-   // paddle->setMaterialName("paddleTexture.tga");				Try to make transparent
-    
+//    serverPaddle.setPosition(paddleNode->getPosition());
     srand ( time(NULL) );
     velocity.x = rand() % 10*20;
     velocity.y = rand() % 10*20;
@@ -234,10 +276,6 @@ bool WallBall::go(void)
     Ogre::Plane rightWallBack(Ogre::Vector3::UNIT_X, 100);
     Ogre::Plane leftWallFront(Ogre::Vector3::UNIT_X, -100);
     Ogre::Plane leftWallBack(Ogre::Vector3::NEGATIVE_UNIT_X, 100);
-    //Ogre::Plane backWallFront(Ogre::Vector3::NEGATIVE_UNIT_Z, -300);
-    //Ogre::Plane backWallBack(Ogre::Vector3::UNIT_Z, 300);
-    Ogre::Plane frontWallFront(Ogre::Vector3::UNIT_Z, -300);
-    Ogre::Plane frontWallBack(Ogre::Vector3::NEGATIVE_UNIT_Z, 300);
     
     Ogre::MeshManager::getSingleton().createPlane("roofFront", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
     roofFront, 200, 600, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Z);   
@@ -255,14 +293,7 @@ bool WallBall::go(void)
     leftWallFront, 600, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Y);
     Ogre::MeshManager::getSingleton().createPlane("leftWallBack", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
     leftWallBack, 600, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Y);
-    /*Ogre::MeshManager::getSingleton().createPlane("backWallFront", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-    backWallFront, 200, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_X);
-    Ogre::MeshManager::getSingleton().createPlane("backWallBack", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-    backWallBack, 200, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_X);*/
-    Ogre::MeshManager::getSingleton().createPlane("frontWallFront", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-    frontWallFront, 200, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_X);
-    Ogre::MeshManager::getSingleton().createPlane("frontWallBack", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-    frontWallBack, 200, 200, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_X); 
+
     
     Ogre::Entity* entRoofFront = mSceneMgr->createEntity("RoofFrontEntity", "roofFront");
     mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(entRoofFront);
@@ -303,26 +334,6 @@ bool WallBall::go(void)
     mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(entLeftWallBack);
     entLeftWallBack->setMaterialName("Examples/Rockwall");
     entLeftWallBack->setCastShadows(false);
-/*
-    Ogre::Entity* entBackWallFront = mSceneMgr->createEntity("BackWallFront", "backWallFront");
-    mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(entBackWallFront);
-    entBackWallFront->setMaterialName("Examples/Rockwall");
-    entBackWallFront->setCastShadows(false);
-
-    Ogre::Entity* entBackWallBack = mSceneMgr->createEntity("BackWallBack", "backWallBack");
-    mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(entBackWallBack);
-    entBackWallBack->setMaterialName("Examples/Rockwall");
-    entBackWallBack->setCastShadows(false);
-*/
-    Ogre::Entity* entFrontWallFront = mSceneMgr->createEntity("FrontWallFront", "frontWallFront");
-    mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(entFrontWallFront);
-    entFrontWallFront->setMaterialName("Examples/Rockwall");
-    entFrontWallFront->setCastShadows(false);
-
-    Ogre::Entity* entFrontWallBack = mSceneMgr->createEntity("FrontWallBack", "frontWallBack");
-    mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(entFrontWallBack);
-    entFrontWallBack->setMaterialName("Examples/Rockwall");
-    entFrontWallBack->setCastShadows(false);
 
     // Set ambient light
     mSceneMgr->setAmbientLight(Ogre::ColourValue(0.25, 0.25, 0.25));
@@ -376,7 +387,7 @@ bool WallBall::go(void)
     ballNode->attachObject(spotLight4);
     ballNode->attachObject(spotLight5);
     ballNode->attachObject(spotLight6);
-
+//	sharedBall.setPosition(ballNode->getPosition());
 	initPhysics();
 
 //-------------------------------------------------------------------------------------
@@ -428,7 +439,21 @@ bool WallBall::go(void)
     mRoot->addFrameListener(this);
 //-------------------------------------------------------------------------------------
     mRoot->startRendering();
- 
+//    NetworkManager hostNet = NetworkManager::NetworkManager(); 
+//	hostNet->NetworkHost();
+/*	Ogre::Vector3 vic= Ogre::Vector3(1,2,34);
+	std::cout<<"\n*********************************************************************\n";
+    	std::cout<<WallBall::Vector3ToString(vic);
+	std::cout<<"and the manager says: ";
+	std::cout<<NetworkManager::Vector3ToString(vic);
+	vic=WallBall::StringToVector3("&5,10,8#");
+	std::cout<<"\nx: ";
+	std::cout<<vic.x;
+	std::cout<<" = 5?\ny: ";
+	std::cout<<vic.y;
+	std::cout<<" = 10?\nz: ";
+	std::cout<<vic.z;
+	std::cout<<" = 8?\n*********************************************************************\n";*/
     return true;
 }
  
@@ -440,86 +465,97 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
  
     if(mShutDown)
         return false;
- 
-    //Need to capture/update each device
-    mKeyboard->capture();
-    mMouse->capture();
+    if(connected)
+{
+	serverPaddle.setPosition(mSceneMgr->getSceneNode("PaddleNode")->getPosition());
+	clientPaddle.setPosition(mSceneMgr->getSceneNode("PaddleNode2")->getPosition());
+	NetworkManager::NetworkControl.NetworkCommunicator(&serverPaddle,&clientPaddle,&sharedBall);
+	Ogre::SceneNode* clientPad = mSceneMgr->getSceneNode("PaddleNode2");
+	Ogre::SceneNode* serverPad = mSceneMgr->getSceneNode("PaddleNode");
+	clientPad->setPosition(clientPaddle.getPosition());
+	serverPad->setPosition(serverPaddle.getPosition());
+	
+}
+  //Need to capture/update each device
+  mKeyboard->capture();
+  mMouse->capture();
     
-    GUIManager::GUIControl.frameRenderingQueued(evt); 
+  GUIManager::GUIControl.frameRenderingQueued(evt); 
 
-    if(singleplayer || multiplayer){
-        if (!GUIManager::GUIControl.isDialogVisible())
-        {
-            mCameraMan->frameRenderingQueued(evt);   // if dialog isn't up, then update the camera
-            if (GUIManager::GUIControl.isScoreboardVisible())   // if details panel is visible, then update its contents
-            {
-                GUIManager::GUIControl.inPlay(inPlay, effect, timer, score);
-            }
-        }
-    
+  	if (!GUIManager::GUIControl.isDialogVisible())
+    {
+  	  mCameraMan->frameRenderingQueued(evt);   // if dialog isn't up, then update the camera
+      if (GUIManager::GUIControl.isScoreboardVisible())   // if details panel is visible, then update its contents
+      {
+      	GUIManager::GUIControl.inPlay(inPlay, effect, timer, score);
+      }
+    }
+
+	if(isHost){    
 		Ogre::SceneNode* ball = mSceneMgr->getSceneNode("BallNode");
 
 		world->stepSimulation(1/60.0);
-        btVector3 v = gameBall->getLinearVelocity();
-        if(v[2] < 250 && v[2] >= 0)
+    btVector3 v = gameBall->getLinearVelocity();
+    
+		if(v[2] < 250 && v[2] >= 0)
 			gameBall->setLinearVelocity(btVector3(v[0],v[1],250));
-        else if(v[2] > -250 && v[2] < 0)
-            gameBall->setLinearVelocity(btVector3(v[0],v[1],-250));
+    else if(v[2] > -250 && v[2] < 0)
+      gameBall->setLinearVelocity(btVector3(v[0],v[1],-250));
 
-        v = gameBall->getLinearVelocity();
-        if(v[1] < 100 && v[1] >= 0)
+    v = gameBall->getLinearVelocity();
+    if(v[1] < 100 && v[1] >= 0)
 			gameBall->setLinearVelocity(btVector3(v[0],100,v[2]));
-        else if(v[1] > -250 && v[1] < 0)
-            gameBall->setLinearVelocity(btVector3(v[0],-100,v[2]));
+    else if(v[1] > -250 && v[1] < 0)
+      gameBall->setLinearVelocity(btVector3(v[0],-100,v[2]));
 
-        v = gameBall->getLinearVelocity();
-        if(v[0] < 250 && v[0] >= 0)
+    v = gameBall->getLinearVelocity();
+    if(v[0] < 250 && v[0] >= 0)
 			gameBall->setLinearVelocity(btVector3(100,v[1],v[2]));
-        else if(v[0] > -250 && v[0] < 0)
-            gameBall->setLinearVelocity(btVector3(-100,v[1],v[2]));
+    else if(v[0] > -250 && v[0] < 0)
+    	gameBall->setLinearVelocity(btVector3(-100,v[1],v[2]));
 		
 		btTransform t;
-	    gameBall->getMotionState()->getWorldTransform(t);
-        btVector3 position = t.getOrigin();
-        ball->setPosition(Ogre::Vector3((float)position[0],(float)position[1],(float)position[2]));
+	  gameBall->getMotionState()->getWorldTransform(t);
+    btVector3 position = t.getOrigin();
+    ball->setPosition(Ogre::Vector3((float)position[0],(float)position[1],(float)position[2]));
+		sharedBall.setPosition(Ogre::Vector3((float)position[0],(float)position[1],(float)position[2]));
 
-        btVector3 btVelocity = gameBall->getLinearVelocity();
+    btVector3 btVelocity = gameBall->getLinearVelocity();
 
 		Ogre::SceneNode* paddle = mSceneMgr->getSceneNode("PaddleNode");
-        Ogre::Vector3 paddlePosition = paddle->getPosition();
+    Ogre::Vector3 paddlePosition = paddle->getPosition();
 
-
-        Ogre::Vector3 ballPosition = ball->getPosition();
-        if(ballPosition.x>90) {
-            ballPosition.x = 90;
-            velocity.x *= -1;
+    Ogre::Vector3 ballPosition = ball->getPosition();
+    if(ballPosition.x>90) {
+		  ballPosition.x = 90;
+		  velocity.x *= -1;
 			gameBall->setLinearVelocity(btVector3(-1*btVelocity[0],btVelocity[1],btVelocity[2]));
-            SoundManager::SoundControl.playClip(ballBounceWall, 0);
-        } else if(ballPosition.x<-90) {
-            ballPosition.x = -90;
-            velocity.x *= -1;
+    	SoundManager::SoundControl.playClip(ballBounceWall, 0);
+    } else if(ballPosition.x<-90) {
+    	ballPosition.x = -90;
+      velocity.x *= -1;
 			gameBall->setLinearVelocity(btVector3(-1*btVelocity[0],btVelocity[1],btVelocity[2]));
-            SoundManager::SoundControl.playClip(ballBounceWall, 0);
-        }
-        if(ballPosition.y>90) {
-            ballPosition.y=90;
-            velocity.y *= -1;
+      SoundManager::SoundControl.playClip(ballBounceWall, 0);
+    }
+    if(ballPosition.y>90) {
+    	ballPosition.y=90;
+      velocity.y *= -1;
 			gameBall->setLinearVelocity(btVector3(btVelocity[0],-1*btVelocity[1],btVelocity[2]));
-            SoundManager::SoundControl.playClip(ballBounceWall, 0);
-        } else if(ballPosition.y<-90) {
-            ballPosition.y = -90;
-            velocity.y *= -1;
+      SoundManager::SoundControl.playClip(ballBounceWall, 0);
+    } else if(ballPosition.y<-90) {
+      ballPosition.y = -90;
+      velocity.y *= -1;
 			gameBall->setLinearVelocity(btVector3(btVelocity[0],-1*btVelocity[1],btVelocity[2]));
-            SoundManager::SoundControl.playClip(ballBounceWall, 0);
-        } 
-        if(ballPosition.z>290 && ballPosition.z<300) {
-            /*  if( (ballPosition.x <= paddlePosition.x && ballPosition.x >= (paddlePosition.x - 100)) && (ballPosition.y >= (paddlePosition.y - 20) && ballPosition.y <= (paddlePosition.y + 20)) ){
+      SoundManager::SoundControl.playClip(ballBounceWall, 0);
+    } 
+    if(ballPosition.z>290 && ballPosition.z<300) {
+          /*  if( (ballPosition.x <= paddlePosition.x && ballPosition.x >= (paddlePosition.x - 100)) && (ballPosition.y >= (paddlePosition.y - 20) && ballPosition.y <= (paddlePosition.y + 20)) ){
             ballPosition.z = 290;
             velocity.x += 100 * (-(paddlePosition.x - ballPosition.x)/100);
             velocity.y += 100 * (-(paddlePosition.y - ballPosition.y)/20);
             velocity.z *= -1;
             SoundManager::SoundControl.playClip(ballBouncePaddle, 0);
-            }*/
+          }*/
 	        Ogre::SceneNode* paddleNode = mSceneMgr->getSceneNode("PaddleNode");
 	        paddleNode->_update(false,false);
 	        Ogre::AxisAlignedBox bounds = paddleNode->_getWorldAABB();
@@ -532,59 +568,82 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
 		        velocity.y += 100 * (-(paddlePosition.y - ballPosition.y)/(bounds.getSize().y/2 + 10));
 		        velocity.z *= -1;
 		        gameBall->setLinearVelocity(btVector3(btVelocity[0]+ (100 * (-(paddlePosition.x - ballPosition.x)/(bounds.getSize().x/2 + 10))),
-			    btVelocity[1]+ (100 * (-(paddlePosition.y - ballPosition.y)/(bounds.getSize().y/2 + 10))),-1*btVelocity[2]));
+			    	btVelocity[1]+ (100 * (-(paddlePosition.y - ballPosition.y)/(bounds.getSize().y/2 + 10))),-1*btVelocity[2]));
 		        SoundManager::SoundControl.playClip(ballBouncePaddle, 0);
 	        }
-        } else if(ballPosition.z<-290) {
-            ballPosition.z = -290;
-            velocity.z *= -1;
+		} else if(multiplayer && ballPosition.z<-290 && ballPosition.z>-300) {
+			Ogre::SceneNode* paddleNode = mSceneMgr->getSceneNode("PaddleNode2");
+	    paddleNode->_update(false,false);
+	    Ogre::AxisAlignedBox bounds = paddleNode->_getWorldAABB();
+	    Ogre::Vector3 max = bounds.getMaximum();
+	    Ogre::Vector3 min = bounds.getMinimum();
+	    if(ballPosition.x-10 <= max.x && ballPosition.y-10 <= max.y && ballPosition.x+10 >= min.x && ballPosition.y+10 >= min.y)
+	    {
+			  ballPosition.z = 290;
+		    velocity.x += 100 * (-(paddlePosition.x - ballPosition.x)/(bounds.getSize().x/2 + 10));
+			  velocity.y += 100 * (-(paddlePosition.y - ballPosition.y)/(bounds.getSize().y/2 + 10));
+		    velocity.z *= -1;
+		    gameBall->setLinearVelocity(btVector3(btVelocity[0]+ (100 * (-(paddlePosition.x - ballPosition.x)/(bounds.getSize().x/2 + 10))),
+		  	btVelocity[1]+ (100 * (-(paddlePosition.y - ballPosition.y)/(bounds.getSize().y/2 + 10))),-1*btVelocity[2]));
+		    SoundManager::SoundControl.playClip(ballBouncePaddle, 0);
+	  	}
+    } else if(singleplayer && ballPosition.z<-290) {
+    	ballPosition.z = -290;
+    	velocity.z *= -1;
 			gameBall->setLinearVelocity(btVector3(btVelocity[0],btVelocity[1],-1*btVelocity[2]));
-            SoundManager::SoundControl.playClip(ballBounceWall, 0);
-        }
-        if(ballPosition.z>300)
-	       inPlay=false;
+    	SoundManager::SoundControl.playClip(ballBounceWall, 0);
+    }
+    if(ballPosition.z>300 || ballPosition.z<-300)
+	  	inPlay=false;
     		
-        ball->setPosition(ballPosition);
-        //ball->translate(evt.timeSinceLastFrame*velocity);
+    ball->setPosition(ballPosition);
+		sharedBall.setPosition(ballPosition);
+    //ball->translate(evt.timeSinceLastFrame*velocity);
 
-	   t.setOrigin(btVector3(ballPosition.x,ballPosition.y,ballPosition.z));
-	   gameBall->getMotionState()->setWorldTransform(t);
+	  t.setOrigin(btVector3(ballPosition.x,ballPosition.y,ballPosition.z));
+	  gameBall->getMotionState()->setWorldTransform(t);
+
 		
-
-	   if(hasPowerUp)				///Powerup Collisions (if no bullet)
-	   {
-		    Ogre::SceneNode* powerupNode = mSceneMgr->getSceneNode("PowerUpNode");
-		    powerupNode->_update(false,false);
-		    Ogre::AxisAlignedBox bounds =powerupNode->_getWorldAABB();
-		    Ogre::Vector3 max = bounds.getMaximum() - 100;
-		    Ogre::Vector3 min = bounds.getMinimum() + 100;
-		    if(ballPosition.x <= max.x && ballPosition.y <= max.y && ballPosition.z <= max.z && ballPosition.x >= min.x && ballPosition.y >= min.y && ballPosition.z >= min.z)
+/*
+	  if(hasPowerUp)				///Powerup Collisions (if no bullet)
+	  {
+			Ogre::SceneNode* powerupNode = mSceneMgr->getSceneNode("PowerUpNode");
+		  powerupNode->_update(false,false);
+		  Ogre::AxisAlignedBox bounds =powerupNode->_getWorldAABB();
+		  Ogre::Vector3 max = bounds.getMaximum() - 100;
+		  Ogre::Vector3 min = bounds.getMinimum() + 100;
+		  if(ballPosition.x <= max.x && ballPosition.y <= max.y && ballPosition.z <= max.z && ballPosition.x >= min.x && ballPosition.y >= min.y && ballPosition.z >= min.z)
+		  {
+			  hasPowerUp=false;
+			  if(effect<=1)
+			  {
+					score+=100;
+				  velocity += Ogre::Vector3((velocity.x/Ogre::Math::Abs(velocity.x))*100.f,(velocity.y/Ogre::Math::Abs(velocity.y))*100.f,(velocity.z/Ogre::Math::Abs(velocity.z))*100.f); 
+          gameBall->setLinearVelocity(btVector3((velocity.x/Ogre::Math::Abs(velocity.x))*100.f,(velocity.y/Ogre::Math::Abs(velocity.y))*100.f,(velocity.z/Ogre::Math::Abs(velocity.z))*100.f));
+			  }
+		    if(effect>=2)
 		    {
-			    hasPowerUp=false;
-			    if(effect<=1)
-			    {
-				    score+=100;
-				    velocity += Ogre::Vector3((velocity.x/Ogre::Math::Abs(velocity.x))*100.f,(velocity.y/Ogre::Math::Abs(velocity.y))*100.f,(velocity.z/Ogre::Math::Abs(velocity.z))*100.f); 
-                    gameBall->setLinearVelocity(btVector3((velocity.x/Ogre::Math::Abs(velocity.x))*100.f,(velocity.y/Ogre::Math::Abs(velocity.y))*100.f,(velocity.z/Ogre::Math::Abs(velocity.z))*100.f));
-			    }
-		      	if(effect>=2)
-		      	{
-				    score+=100;
-				    velocity /= 1.5;
-				    gameBall->setLinearVelocity(btVector3(btVelocity[0]/1.5,btVelocity[1]/1.5,-1*btVelocity[2]/1.5));
-			    }	
-			    PowerupManager::PowerupControl.destroyPowerup();	
-		    }
-	    }
-        ball->pitch( Ogre::Degree( evt.timeSinceLastFrame*velocity.x ) );
-        ball->yaw( Ogre::Degree( evt.timeSinceLastFrame*velocity.y ) );
-        ball->roll( Ogre::Degree( evt.timeSinceLastFrame*velocity.z ) );
-        if(!hasPowerUp)
-            PowerupManager::PowerupControl.generatePowerup();
-        hasPowerUp=true;
+					score+=100;
+				  velocity /= 1.5;
+				  gameBall->setLinearVelocity(btVector3(btVelocity[0]/1.5,btVelocity[1]/1.5,-1*btVelocity[2]/1.5));
+			  }	
+			  mSceneMgr->destroySceneNode("PowerUpNode");	
+			}
+		}
+*/
+    ball->pitch( Ogre::Degree( evt.timeSinceLastFrame*velocity.x ) );
+    ball->yaw( Ogre::Degree( evt.timeSinceLastFrame*velocity.y ) );
+    ball->roll( Ogre::Degree( evt.timeSinceLastFrame*velocity.z ) );
+    generatePowerup();
 
 	   //velocity += Ogre::Vector3((velocity.x/Ogre::Math::Abs(velocity.x))*.1f,(velocity.y/Ogre::Math::Abs(velocity.y))*.1f,(velocity.z/Ogre::Math::Abs(velocity.z))*.1f);
-    } 
+    }
+		else if(isClient)
+		{
+			
+			Ogre::SceneNode* ball = mSceneMgr->getSceneNode("BallNode");
+			ball->setPosition(sharedBall.getPosition());
+		}
     return true;
 }
 //-------------------------------------------------------------------------------------
@@ -674,7 +733,7 @@ bool WallBall::keyPressed( const OIS::KeyEvent &arg )
     	timer.reset();
     	effect=0;
     	hasPowerUp=false;
-    	PowerupManager::PowerupControl.destroyPowerup();
+    	mSceneMgr->destroySceneNode("PowerUpNode");
     	score=0;
     	inPlay = true;
         velocity.z *= -1;
@@ -695,8 +754,16 @@ bool WallBall::mouseMoved( const OIS::MouseEvent &arg )
     if (mTrayMgr->injectMouseMove(arg)) return true;
     //mCameraMan->injectMouseMove(arg);
     
-    Ogre::SceneNode* paddleNode = mSceneMgr->getSceneNode("PaddleNode");
-    paddleNode->translate(arg.state.X.rel/2, -(arg.state.Y.rel)/2, 0);
+		Ogre::SceneNode* paddleNode;
+
+		if(isClient) {
+    	paddleNode = mSceneMgr->getSceneNode("PaddleNode2");
+			paddleNode->translate(-(arg.state.X.rel)/2, -(arg.state.Y.rel)/2, 0);
+		}
+		else {
+			paddleNode = mSceneMgr->getSceneNode("PaddleNode");
+			paddleNode->translate(arg.state.X.rel/2, -(arg.state.Y.rel)/2, 0);
+		}    
     Ogre::Vector3 position = paddleNode->getPosition();
     paddleNode->_update(false,false);
     Ogre::AxisAlignedBox bounds = paddleNode->_getWorldAABB();
@@ -719,10 +786,12 @@ bool WallBall::mouseMoved( const OIS::MouseEvent &arg )
 void WallBall::buttonHit(OgreBites::Button* button){
     if (button->getName().compare("Singleplayer") == 0){
         singleplayer = true;
+				WallBall::setupFrontWall();
         GUIManager::GUIControl.end_MainScreen();
     }
     else if (button->getName().compare("Multiplayer") == 0){
         multiplayer = true;
+	WallBall::setupOpponentPaddle();
         GUIManager::GUIControl.end_MainScreen();
         GUIManager::GUIControl.begin_MultiplayerScreen();
     }
@@ -739,9 +808,19 @@ void WallBall::buttonHit(OgreBites::Button* button){
         GUIManager::GUIControl.begin_MainScreen();
     }
     else if(button->getName().compare("Host") == 0)
-        GUIManager::GUIControl.end_MultiplayerScreen();
-    else if(button->getName().compare("Client") == 0)
-        GUIManager::GUIControl.end_MultiplayerScreen();
+		{
+			NetworkManager::NetworkControl.NetworkHost();
+			connected = true;
+			isHost = true;
+      GUIManager::GUIControl.end_MultiplayerScreen();
+		}
+    else if(button->getName().compare("Client") == 0) {
+			NetworkManager::NetworkControl.NetworkClient(hostname);	//pass hostname as argument
+			connected = true;
+			isClient = true;
+			mCamera->setPosition(Ogre::Vector3(0,50,-600));
+      GUIManager::GUIControl.end_MultiplayerScreen();
+		}
 }
  
 bool WallBall::mousePressed( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
@@ -787,98 +866,41 @@ void WallBall::windowClosed(Ogre::RenderWindow* rw)
     }
 }
 
-void NetworkHost(void)      //http://content.gpwiki.org/index.php/SDL:Tutorial:Using_SDL_net <- good code here, adapt messages accordingly
-{                           //http://jcatki.no-ip.org:8080/SDL_net/SDL_net.html <- good documentation here
-  TCPsocket sd, csd;      /* Socket descriptor, Client socket descriptor */
-  IPaddress ip, *remoteIP;
-  int quit, quit2;
-  char buffer[512];
-
-	if (SDLNet_Init() < 0)
+void WallBall::generatePowerup(void)
+{
+	if(/*Ogre::Math::RangeRandom(0,5000) > 10 ||*/ hasPowerUp)
+		return;
+	//PowerUp spawned = PowerUp::PowerUp(Ogre::Math::RangeRandom(1,4));
+	effect = Ogre::Math::RangeRandom(0,3);
+	Ogre::Entity* power;
+	if(effect <= 1)
 	{
-		fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
-		exit(EXIT_FAILURE);
+		power = mSceneMgr->getEntity("PowerUpSphere");
 	}
- 
-	/* Resolving the host using NULL make network interface to listen */
-	if (SDLNet_ResolveHost(&ip, NULL, 2000) < 0)
+	if(effect >= 2)
 	{
-		fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
-		exit(EXIT_FAILURE);
+		power = mSceneMgr->getEntity("PowerUpSphere");
 	}
- 
-	/* Open a connection with the IP provided (listen on the host's port) */
-	if (!(sd = SDLNet_TCP_Open(&ip)))
+	Ogre::SceneNode* powerupNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("PowerUpNode");
+	powerupNode->scale(0.4f,0.4f,0.4f);
+	float Powx = Ogre::Math::RangeRandom(0,200)-100;
+	float Powy = Ogre::Math::RangeRandom(0,200)-100;
+	float Powz = Ogre::Math::RangeRandom(0,600)-300;
+	powerupNode->translate(Ogre::Vector3(Powx,Powy,Powz));
+	powerupNode->attachObject(power);
+	powerupNode->_update(false,false);
+	hasPowerUp=true;
+/*	if(effect == 3)
 	{
-		fprintf(stderr, "SDLNet_TCP_Open: %s\n", SDLNet_GetError());
-		exit(EXIT_FAILURE);
+		power = mSceneMgr->createEntity("PowerUp", "sphere.mesh");
 	}
- 
-	/* Wait for a connection, send data and term */
-	quit = 0;
-	while (!quit)
+	if(effect == 4)
 	{
-		/* This check the sd if there is a pending connection.
-		* If there is one, accept that, and open a new socket for communicating */
-		if ((csd = SDLNet_TCP_Accept(sd)))
-		{
-			/* Now we can communicate with the client using csd socket
-			* sd will remain opened waiting other connections */
- 
-			/* Get the remote address */
-			if ((remoteIP = SDLNet_TCP_GetPeerAddress(csd)))
-				/* Print the address, converting in the host format */
-				printf("Host connected: %x %d\n", SDLNet_Read32(&remoteIP->host), SDLNet_Read16(&remoteIP->port));
-			else
-				fprintf(stderr, "SDLNet_TCP_GetPeerAddress: %s\n", SDLNet_GetError());
- 
-			quit2 = 0;
-			while (!quit2)
-			{
-				if (SDLNet_TCP_Recv(csd, buffer, 512) > 0)
-				{
-					printf("Client say: %s\n", buffer);
- 
-					if(strcmp(buffer, "exit") == 0)	/* Terminate this connection */
-					{
-						quit2 = 1;
-						printf("Terminate connection\n");
-					}
-					if(strcmp(buffer, "quit") == 0)	/* Quit the program */
-					{
-						quit2 = 1;
-						quit = 1;
-						printf("Quit program\n");
-					}
-				}
-				//printf("Write something:\n>");
-				//scanf("%s", buffer);
-		 						//put message in buffer
-				len = strlen(buffer) + 1;
-				if (SDLNet_TCP_Send(csd, (void *)buffer, len) < len)
-				{
-					fprintf(stderr, "SDLNet_TCP_Send: %s\n", SDLNet_GetError());
-					exit(EXIT_FAILURE);
-				}
-
-			}
- 
-			/* Close the client socket */
-			SDLNet_TCP_Close(csd);
-		}
-	}
- 
-	SDLNet_TCP_Close(sd);
-	SDLNet_Quit();
+		power = mSceneMgr->createEntity("PowerUp", "sphere.mesh");
+	}*/
+	
 }
-
-void NetworkClient(void)    //http://content.gpwiki.org/index.php/SDL:Tutorial:Using_SDL_net <- good code here, adapt messages accordingly
-{                           //http://jcatki.no-ip.org:8080/SDL_net/SDL_net.html <- good documentation here
-    IPaddress ip;           /* Server address */
-    TCPsocket sd;           /* Socket descriptor */
-    int quit, len;
-    char buffer[512];
-}
+ 
  
  
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
