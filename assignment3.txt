@@ -1,0 +1,12 @@
+Michael Madden
+Chris Black
+Ian Ruth
+
+Assignment 3 - Part III
+
+Added menus to navigate through single and multiplayer modes and added networked multiplayer. Singleplayer objective is to keep the ball in play for as long as possible by bouncing the ball off the walls. Multiplayer objective is more like cooperative pong, where two players try to keep the ball in play. In order to access multiplayer, click on the labelled button and choose whether you will be client or host. If host is chosen, the game will wait for a client to try to connect. If client is chosen, then the game will try to connect to the host specified in the WallBall.cpp file under the variable name hostname located at the top of the file. We could not find a way for the GUI system we used to accept text input so in order to choose a new server, go into this file, find char* hostname variable and change the string to the desired host name. Only the host can re-serve the ball.
+
+Manual
+Goal: Keep the ball in front of the paddle for as long as possible. If you miss the ball you lose. The longer you keep the ball inbounds the more points you get for singleplayer. For multiplayer, the player wins by knocking it out of the opponent's side.
+Controls: You move the paddle with the mouse
+Press enter if you want to reset

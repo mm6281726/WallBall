@@ -55,11 +55,14 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_WallBall_OBJECTS = WallBall-WallBall.$(OBJEXT) \
 	WallBall-SoundManager.$(OBJEXT) WallBall-GUIManager.$(OBJEXT) \
-	WallBall-Simulator.$(OBJEXT)
+	WallBall-Simulator.$(OBJEXT) WallBall-NetworkManager.$(OBJEXT) \
+	WallBall-PaddleManager.$(OBJEXT) \
+	WallBall-BallManager.$(OBJEXT)
 WallBall_OBJECTS = $(am_WallBall_OBJECTS)
 am__DEPENDENCIES_1 =
 WallBall_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 WallBall_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(WallBall_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
@@ -167,6 +170,8 @@ PKG_CONFIG_PATH =
 RANLIB = ranlib
 SDL_mixer_CFLAGS = -D_GNU_SOURCE=1 -D_REENTRANT -I/usr/include/SDL  
 SDL_mixer_LIBS = -lSDL_mixer -lSDL  
+SDL_net_CFLAGS = -D_GNU_SOURCE=1 -D_REENTRANT -I/usr/include/SDL  
+SDL_net_LIBS = -lSDL_net -lSDL  
 SED = /bin/sed
 SET_MAKE = 
 SHELL = /bin/bash
@@ -227,11 +232,11 @@ target_alias =
 top_build_prefix = 
 top_builddir = .
 top_srcdir = .
-noinst_HEADERS = WallBall.h SoundManager.h GUIManager.h Simulator.h
+noinst_HEADERS = WallBall.h SoundManager.h GUIManager.h Simulator.h NetworkManager.h PaddleManager.h BallManager.h
 WallBall_CPPFLAGS = -I$(top_srcdir)
-WallBall_SOURCES = WallBall.cpp SoundManager.cpp GUIManager.cpp Simulator.cpp
-WallBall_CXXFLAGS = $(OGRE_CFLAGS) $(OIS_CFLAGS) $(bullet_CFLAGS) $(SDL_CFLAGS) $(SDL_mixer_CFLAGS)
-WallBall_LDADD = $(OGRE_LIBS) $(OIS_LIBS) $(bullet_LIBS) $(SDL_LIBS) $(SDL_mixer_LIBS)
+WallBall_SOURCES = WallBall.cpp SoundManager.cpp GUIManager.cpp Simulator.cpp NetworkManager.cpp PaddleManager.cpp BallManager.cpp
+WallBall_CXXFLAGS = $(OGRE_CFLAGS) $(OIS_CFLAGS) $(bullet_CFLAGS) $(SDL_CFLAGS) $(SDL_mixer_CFLAGS) $(SDL_net_CFLAGS)
+WallBall_LDADD = $(OGRE_LIBS) $(OIS_LIBS) $(bullet_LIBS) $(SDL_LIBS) $(SDL_mixer_LIBS)  $(SDL_net_LIBS)
 EXTRA_DIST = buildit makeit
 AUTOMAKE_OPTIONS = foreign
 all: config.h
@@ -341,7 +346,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+include ./$(DEPDIR)/WallBall-BallManager.Po
 include ./$(DEPDIR)/WallBall-GUIManager.Po
+include ./$(DEPDIR)/WallBall-NetworkManager.Po
+include ./$(DEPDIR)/WallBall-PaddleManager.Po
 include ./$(DEPDIR)/WallBall-Simulator.Po
 include ./$(DEPDIR)/WallBall-SoundManager.Po
 include ./$(DEPDIR)/WallBall-WallBall.Po
@@ -422,6 +430,48 @@ WallBall-Simulator.obj: Simulator.cpp
 #	source='Simulator.cpp' object='WallBall-Simulator.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -c -o WallBall-Simulator.obj `if test -f 'Simulator.cpp'; then $(CYGPATH_W) 'Simulator.cpp'; else $(CYGPATH_W) '$(srcdir)/Simulator.cpp'; fi`
+
+WallBall-NetworkManager.o: NetworkManager.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -MT WallBall-NetworkManager.o -MD -MP -MF $(DEPDIR)/WallBall-NetworkManager.Tpo -c -o WallBall-NetworkManager.o `test -f 'NetworkManager.cpp' || echo '$(srcdir)/'`NetworkManager.cpp
+	$(am__mv) $(DEPDIR)/WallBall-NetworkManager.Tpo $(DEPDIR)/WallBall-NetworkManager.Po
+#	source='NetworkManager.cpp' object='WallBall-NetworkManager.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -c -o WallBall-NetworkManager.o `test -f 'NetworkManager.cpp' || echo '$(srcdir)/'`NetworkManager.cpp
+
+WallBall-NetworkManager.obj: NetworkManager.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -MT WallBall-NetworkManager.obj -MD -MP -MF $(DEPDIR)/WallBall-NetworkManager.Tpo -c -o WallBall-NetworkManager.obj `if test -f 'NetworkManager.cpp'; then $(CYGPATH_W) 'NetworkManager.cpp'; else $(CYGPATH_W) '$(srcdir)/NetworkManager.cpp'; fi`
+	$(am__mv) $(DEPDIR)/WallBall-NetworkManager.Tpo $(DEPDIR)/WallBall-NetworkManager.Po
+#	source='NetworkManager.cpp' object='WallBall-NetworkManager.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -c -o WallBall-NetworkManager.obj `if test -f 'NetworkManager.cpp'; then $(CYGPATH_W) 'NetworkManager.cpp'; else $(CYGPATH_W) '$(srcdir)/NetworkManager.cpp'; fi`
+
+WallBall-PaddleManager.o: PaddleManager.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -MT WallBall-PaddleManager.o -MD -MP -MF $(DEPDIR)/WallBall-PaddleManager.Tpo -c -o WallBall-PaddleManager.o `test -f 'PaddleManager.cpp' || echo '$(srcdir)/'`PaddleManager.cpp
+	$(am__mv) $(DEPDIR)/WallBall-PaddleManager.Tpo $(DEPDIR)/WallBall-PaddleManager.Po
+#	source='PaddleManager.cpp' object='WallBall-PaddleManager.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -c -o WallBall-PaddleManager.o `test -f 'PaddleManager.cpp' || echo '$(srcdir)/'`PaddleManager.cpp
+
+WallBall-PaddleManager.obj: PaddleManager.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -MT WallBall-PaddleManager.obj -MD -MP -MF $(DEPDIR)/WallBall-PaddleManager.Tpo -c -o WallBall-PaddleManager.obj `if test -f 'PaddleManager.cpp'; then $(CYGPATH_W) 'PaddleManager.cpp'; else $(CYGPATH_W) '$(srcdir)/PaddleManager.cpp'; fi`
+	$(am__mv) $(DEPDIR)/WallBall-PaddleManager.Tpo $(DEPDIR)/WallBall-PaddleManager.Po
+#	source='PaddleManager.cpp' object='WallBall-PaddleManager.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -c -o WallBall-PaddleManager.obj `if test -f 'PaddleManager.cpp'; then $(CYGPATH_W) 'PaddleManager.cpp'; else $(CYGPATH_W) '$(srcdir)/PaddleManager.cpp'; fi`
+
+WallBall-BallManager.o: BallManager.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -MT WallBall-BallManager.o -MD -MP -MF $(DEPDIR)/WallBall-BallManager.Tpo -c -o WallBall-BallManager.o `test -f 'BallManager.cpp' || echo '$(srcdir)/'`BallManager.cpp
+	$(am__mv) $(DEPDIR)/WallBall-BallManager.Tpo $(DEPDIR)/WallBall-BallManager.Po
+#	source='BallManager.cpp' object='WallBall-BallManager.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -c -o WallBall-BallManager.o `test -f 'BallManager.cpp' || echo '$(srcdir)/'`BallManager.cpp
+
+WallBall-BallManager.obj: BallManager.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -MT WallBall-BallManager.obj -MD -MP -MF $(DEPDIR)/WallBall-BallManager.Tpo -c -o WallBall-BallManager.obj `if test -f 'BallManager.cpp'; then $(CYGPATH_W) 'BallManager.cpp'; else $(CYGPATH_W) '$(srcdir)/BallManager.cpp'; fi`
+	$(am__mv) $(DEPDIR)/WallBall-BallManager.Tpo $(DEPDIR)/WallBall-BallManager.Po
+#	source='BallManager.cpp' object='WallBall-BallManager.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(WallBall_CPPFLAGS) $(CPPFLAGS) $(WallBall_CXXFLAGS) $(CXXFLAGS) -c -o WallBall-BallManager.obj `if test -f 'BallManager.cpp'; then $(CYGPATH_W) 'BallManager.cpp'; else $(CYGPATH_W) '$(srcdir)/BallManager.cpp'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

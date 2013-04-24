@@ -9,7 +9,7 @@
 class GUIManager{
     private:
         OgreBites::SdkTrayManager *mTrayMgr;
-        OgreBites::ParamsPanel* mScoreBoard;
+	OgreBites::ParamsPanel* mScoreBoard;
         bool main;
         bool mPause;
         void createScoreBoard();
@@ -34,7 +34,10 @@ class GUIManager{
         void setScoreboardParam(unsigned int i, Ogre::String name);
         bool isDialogVisible();
         void frameRenderingQueued(const Ogre::FrameEvent& evt);
-
+	void WinnerText(bool winner);
+	void RemoveWinnerText();
+	void hideScoreboard();
+	bool winText;
         static GUIManager GUIControl;
 };
 

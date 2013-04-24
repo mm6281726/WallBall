@@ -76,10 +76,11 @@ void NetworkManager::NetworkCommunicator(PaddleManager* hostPaddle, PaddleManage
 	int len;				//	commented out code should be correct (I can't check it yet though) once networking works right
 	char buffer[512];	
 	//
+	char str[512];
 	if(!server)
 	{
-//		strcpy(buffer,NetworkManager::Vector3ToString(clientPaddle.getPosition()));
-		strcpy(buffer,"test message");
+		strcpy(buffer,NetworkManager::Vector3ToString(clientPaddle->getPosition()));
+		//strcpy(buffer,"test message");
 		len = strlen(buffer) + 1;
 		if (SDLNet_TCP_Send(targetSocket, (void *)buffer, len) < len)
 		{
@@ -88,14 +89,14 @@ void NetworkManager::NetworkCommunicator(PaddleManager* hostPaddle, PaddleManage
 		}
 		if (SDLNet_TCP_Recv(targetSocket, buffer, 512) > 0)
 		{
-	//		std::string decode = std::string(buffer);
-	//		unsigned found = decode.find_first_of("&");
-	//		Ogre::Vector3 v = NetworkManager::StringtoVector3(buffer,0);
-	//		hostPaddle.setPosition(v);
-	//		v = NetworkManager::StringtoVector3(buffer,found+1);
-	//		ball.setPosition(v);
+			std::string decode = std::string(buffer);
+			unsigned found = decode.find_first_of("&");
+			Ogre::Vector3 v = NetworkManager::StringToVector3(buffer,0);
+			hostPaddle->setPosition(v);
+			v = NetworkManager::StringToVector3(buffer,found+1);
+			ball->setPosition(v);
 			printf("Host say: %s\n", buffer);
-			
+		
 		}
 	}
 	else
@@ -103,12 +104,15 @@ void NetworkManager::NetworkCommunicator(PaddleManager* hostPaddle, PaddleManage
 
 		if (SDLNet_TCP_Recv(targetSocket, buffer, 512) > 0)
 		{
-	//		Ogre::Vector3 v = NetworkManager::StringtoVector3(buffer,0);
-	//		clientPaddle.setPosition(v);
+			Ogre::Vector3 v = NetworkManager::StringToVector3(buffer,0);
+			clientPaddle->setPosition(v);
 			printf("Client say: %s\n", buffer);
 		}
-//		strcpy(buffer,NetworkManager::Vector3ToString(hostPaddle.getPosition())+" "+NetworkManager::Vector3ToString(ball.getPosition()));
-		strcpy(buffer,"test reply");
+		strcpy(str, NetworkManager::Vector3ToString(hostPaddle->getPosition()));
+		strcat(str, " ");
+		strcat(str, NetworkManager::Vector3ToString(ball->getPosition()));
+		strcpy(buffer,str);
+		//strcpy(buffer,"test reply");
 		int len = strlen(buffer) + 1;
 		if (SDLNet_TCP_Send(targetSocket, (void *)buffer, len) < len)
 		{
@@ -173,3 +177,4 @@ void NetworkManager::SetHost(bool b)
 {
 	server = b;
 }
+

@@ -71,14 +71,14 @@ GUIManager GUIManager::GUIControl;
     void GUIManager::createPauseScreen(){
         mTrayMgr->createLabel(OgreBites::TL_CENTER, "PauseScreen", "Pause");
         mTrayMgr->createButton(OgreBites::TL_CENTER, "Resume", "Resume", 250);
-        mTrayMgr->createButton(OgreBites::TL_CENTER, "MainMenu", "Main Menu", 250);
+        //mTrayMgr->createButton(OgreBites::TL_CENTER, "MainMenu", "Main Menu", 250);
         mTrayMgr->createButton(OgreBites::TL_CENTER, "PauseExit", "Exit", 250);
     }
 
     void GUIManager::removePauseScreen(){
         mTrayMgr->destroyWidget("PauseScreen");
         mTrayMgr->destroyWidget("Resume");
-        mTrayMgr->destroyWidget("MainMenu");
+        //mTrayMgr->destroyWidget("MainMenu");
         mTrayMgr->destroyWidget("PauseExit");
     }
 
@@ -128,6 +128,20 @@ GUIManager GUIManager::GUIControl;
         }
     }
 
+    void GUIManager::WinnerText(bool winner){
+//	if(winner)
+        	mTrayMgr->createLabel(OgreBites::TL_CENTER, "GameOver", "You win!");
+//	else
+//		mTrayMgr->createLabel(OgreBites::TL_CENTER, "GameOver", "You lose.");
+	winText=true;
+    }
+
+    void GUIManager::RemoveWinnerText(){
+	if(winText)
+		mTrayMgr->destroyWidget("GameOver");
+	winText=false;
+    }
+
     void GUIManager::inPlay(bool inPlay, int effect, Ogre::Timer timer, int score){
 		if(inPlay){
         	mScoreBoard->setParamValue(0, Ogre::StringConverter::toString((timer.getMilliseconds()/100)+score));
@@ -167,4 +181,8 @@ GUIManager GUIManager::GUIControl;
     void GUIManager::frameRenderingQueued(const Ogre::FrameEvent& evt){
         mTrayMgr->frameRenderingQueued(evt);
         mTrayMgr->adjustTrays();
+    }
+
+    void GUIManager::hideScoreboard(){
+	mScoreBoard->hide();
     }

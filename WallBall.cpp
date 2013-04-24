@@ -474,6 +474,13 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
 	Ogre::SceneNode* serverPad = mSceneMgr->getSceneNode("PaddleNode");
 	clientPad->setPosition(clientPaddle.getPosition());
 	serverPad->setPosition(serverPaddle.getPosition());
+/*	Ogre::Vector3 ballPos = sharedBall.getPosition();
+	if(ballPos.z>300 || ballPos.z<-300)
+  	{
+		if(isHost){GUIManager::GUIControl.WinnerText((ballPos.z<-300));}
+		else{GUIManager::GUIControl.WinnerText((ballPos.z>300));}
+	  	inPlay=false;
+    	}*/
 	
 }
   //Need to capture/update each device
@@ -491,7 +498,7 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
       }
     }
 
-	if(isHost){    
+	if(isHost || singleplayer){    
 		Ogre::SceneNode* ball = mSceneMgr->getSceneNode("BallNode");
 
 		world->stepSimulation(1/60.0);
@@ -594,7 +601,12 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
     	SoundManager::SoundControl.playClip(ballBounceWall, 0);
     }
     if(ballPosition.z>300 || ballPosition.z<-300)
+    {
+		//GUIManager::GUIControl.WinnerText((ballPosition.z<-300));
+		//if(isHost){GUIManager::GUIControl.WinnerText((ballPosition.z<-300));}
+		//else{GUIManager::GUIControl.WinnerText((ballPosition.z>300));}
 	  	inPlay=false;
+    }
     		
     ball->setPosition(ballPosition);
 		sharedBall.setPosition(ballPosition);
@@ -640,7 +652,7 @@ bool WallBall::frameRenderingQueued(const Ogre::FrameEvent& evt)
     }
 		else if(isClient)
 		{
-			
+			GUIManager::GUIControl.hideScoreboard();
 			Ogre::SceneNode* ball = mSceneMgr->getSceneNode("BallNode");
 			ball->setPosition(sharedBall.getPosition());
 		}
@@ -720,7 +732,7 @@ bool WallBall::keyPressed( const OIS::KeyEvent &arg )
         GUIManager::GUIControl.pause();
     }
 
-    else if (arg.key == OIS::KC_RETURN)
+    else if (!isClient && arg.key == OIS::KC_RETURN)
     {       
 		SoundManager::SoundControl.playClip(ballReset, 0);
         mSceneMgr->getSceneNode("BallNode")->setPosition(0,0,0);
@@ -736,6 +748,7 @@ bool WallBall::keyPressed( const OIS::KeyEvent &arg )
     	mSceneMgr->destroySceneNode("PowerUpNode");
     	score=0;
     	inPlay = true;
+	GUIManager::GUIControl.RemoveWinnerText();
         velocity.z *= -1;
     }
 
@@ -799,10 +812,10 @@ void WallBall::buttonHit(OgreBites::Button* button){
         mShutDown = true;
     else if(button->getName().compare("Resume") == 0)
         GUIManager::GUIControl.pause();
-    else if(button->getName().compare("MainMenu") == 0){
+    /*else if(button->getName().compare("MainMenu") == 0){
         GUIManager::GUIControl.pause();
         GUIManager::GUIControl.begin_MainScreen();
-    }
+    }*/
     else if(button->getName().compare("Back") == 0){
         GUIManager::GUIControl.end_MultiplayerScreen();
         GUIManager::GUIControl.begin_MainScreen();
